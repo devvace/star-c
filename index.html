@@ -155,20 +155,6 @@
         <dl class="stats" id="dsStats"></dl>
         <label class="toggle"><input type="checkbox" id="mask"> 지역별 인원이 5명 미만이면 숫자 대신 "5명 미만"으로 표시 (실제 데이터 연동 시 권장)</label>
       </div>
-      <details class="card wide" id="dataRef">
-        <summary><h3>데이터 구조 (참고)</h3><span class="sub">실제 데이터를 연결할 때의 구조와 데이터 항목 설명</span></summary>
-        <div class="flow">
-          <div class="box"><b>대상자용 서비스 DB</b>이름, 연락처 등 원본 정보와 동의 기록</div>
-          <div class="arr">→</div>
-          <div class="box sep"><b>매칭용 분리 DB</b>가명 ID와 매칭에 쓰는 5개 항목만</div>
-          <div class="arr">→</div>
-          <div class="box"><b>집계 API</b>인원 수와 분포만 전달</div>
-          <div class="arr">→</div>
-          <div class="box"><b>의뢰자 콘솔</b>결과 조회, 기록 남김</div>
-        </div>
-        <div class="fine">의뢰자 콘솔은 집계된 숫자만 받고 대상자 원본 정보에는 접근하지 않습니다. 파일럿에서는 매칭용 DB 자리에 가상 데이터를 넣어 동작합니다.</div>
-        <div class="tbl"><table id="schema"></table></div>
-      </details>
     </div>
   </section>
 </main>

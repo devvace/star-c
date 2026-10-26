@@ -153,17 +153,6 @@ function renderAdmin(): void {
     ['인원이 많은 지역', top.map(([c, n]) => `${SIDO_BY[c].s} ${n}명`).join(', ')],
     ['데이터 출처', '가상 데이터 (시드 20261022, 항상 같은 내용)'],
   ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')
-  const schema = [
-    ['subject_id', '문자', '가명 ID (VS-0001 형식)', '—'],
-    ['age', '정수', '만 나이. 10세 구간으로 비교', '● 연령'],
-    ['sex', '코드', 'M / F', '● 성별'],
-    ['sido_code', '코드', '행정표준코드 시도 2자리', '● 거주지역'],
-    ['health_status', '코드', '건강인 / 환자', '● 건강상태'],
-    ['disease_category', '코드', '질환 6종 중 하나. 건강인은 비어 있음', '● 질환'],
-    ['disease_detail', '문자', "'기타'일 때의 질환명", '기타 입력 시만'],
-    ['consent_matching', '예/아니오', '매칭 활용 동의 여부. 동의한 사람만 매칭', '사전 조건']]
-  $('schema').innerHTML = `<thead><tr><th>항목</th><th>형식</th><th>설명</th><th>매칭에 사용</th></tr></thead><tbody>${
-    schema.map((r) => `<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody>`
 }
 
 // 사용 로그 CSV 내보내기. 엑셀에서 한글이 깨지지 않도록 BOM + CRLF.

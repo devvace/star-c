@@ -148,20 +148,9 @@ td .meter i{display:block;height:100%;background:var(--bar)}
 .admin-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
 @media (max-width:860px){.admin-grid{grid-template-columns:minmax(0,1fr)}}
 .admin-grid .wide{grid-column:1/-1}
-.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin-top:12px}
-.flow .box{flex:1 1 150px;border:1px solid var(--line-strong);border-radius:var(--r);padding:10px 12px;background:var(--sunken);font-size:12.5px;min-width:0}
-.flow .box b{display:block;font-size:13px;margin-bottom:2px}
-.flow .box.sep{border-style:dashed}
-.flow .arr{align-self:center;color:var(--muted)}
 .lock{padding:40px 18px;text-align:center;color:var(--muted)}
 .stats{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;margin:14px 0 4px;font-size:13px}
 .stats dt{color:var(--muted)} .stats dd{margin:0;font-weight:600}
-/* 접이식 참고 섹션 */
-details.card summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
-details.card summary::-webkit-details-marker{display:none}
-details.card summary::before{content:"▸";color:var(--accent);font-size:14px;margin-right:2px}
-details.card[open] summary::before{content:"▾"}
-details.card summary .sub{margin-top:0}
 .toggle{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
 .toggle input{accent-color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:var(--r-pill);font-size:13px;z-index:20}
