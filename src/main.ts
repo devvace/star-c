@@ -105,15 +105,9 @@ function renderReport(): void {
   else { durV = `${MAX_MONTHS}+<small>개월</small>`; durS = `신규 유입을 반영해도 ${MAX_MONTHS}개월 안에 달성하기 어렵습니다`; durPill = '<span class="pill bad">달성 곤란</span>' }
   $('kpis').innerHTML = `
     <div class="kpi"><span class="l">매칭 대상자 수</span><span class="v">${N}<small>명</small></span><span class="s">하드필터 1차 매칭</span></div>
-    <div class="kpi"><span class="l">예상 등록 인원</span><span class="v">${f1(E)}<small>명</small></span><span class="s">반응률과 통과율 적용</span></div>
-    <div class="kpi"><span class="l">예상 소요기간</span><span class="v">${durV}</span>${durPill}<span class="s">${durS}</span></div>
+    <div class="kpi"><span class="l">예상 등록 인원<button type="button" class="info" aria-controls="tip-enroll" aria-expanded="false" title="계산 방법">!</button></span><span class="v">${f1(E)}<small>명</small></span><span class="s">반응률과 통과율 적용</span><div class="tip" id="tip-enroll" hidden>매칭 대상자 ${N}명 × 반응률 ${pct(p.rr)} × 스크리닝 통과율 ${pct(p.pass)} = ${f1(E)}명. 반응률과 통과율은 <b>${esc(key)}</b> 기준 가상 시나리오 값입니다.</div></div>
+    <div class="kpi"><span class="l">예상 소요기간<button type="button" class="info" aria-controls="tip-months" aria-expanded="false" title="계산 방법">!</button></span><span class="v">${durV}</span>${durPill}<span class="s">${durS}</span><div class="tip" id="tip-months" hidden>현재 대상자를 ${POOL_MONTHS}개월 안에 모두 접촉하고, 그 뒤 매월 현재 인원의 ${pct(INFLOW)}가 새로 들어온다고 가정해 계산합니다. 표시 상한은 ${MAX_MONTHS}개월입니다.</div></div>
     <div class="kpi"><span class="l">현재 대상자 기준 목표 달성률</span><span class="v">${pct(ach)}</span><span class="s">목표 ${c.target}명 대비</span></div>`
-  $('formula').innerHTML = `
-    <span class="t"><b>${N}</b><i>매칭 대상자 수</i></span><span class="op">×</span>
-    <span class="t"><b>${pct(p.rr)}</b><i>예상 반응률</i></span><span class="op">×</span>
-    <span class="t"><b>${pct(p.pass)}</b><i>예상 스크리닝 통과율</i></span><span class="op">=</span>
-    <span class="t"><b>${f1(E)}</b><i>예상 등록 인원</i></span>
-    <span class="src">반응률과 통과율은 <b>${esc(key)}</b> 기준 가상 값입니다(확정 전). 소요기간은 현재 대상자를 ${POOL_MONTHS}개월 안에 모두 접촉하고, 그 뒤 매월 현재 인원의 ${pct(INFLOW)}가 새로 들어온다고 가정해 계산합니다.</span>`
   let ban = ''
   if (c.status === '건강인') ban += '<div class="banner warn">건강인 대상 시험은 주요 서비스 범위 밖입니다. 결과는 참고용입니다.</div>'
   if (N > 0 && N < 10) ban += `<div class="banner warn">매칭 대상자가 10명 미만입니다. 가상 데이터가 ${total}명뿐이라 숫자 변동이 큽니다. 지역이나 연령을 넓혀 비교해 보세요.</div>`
@@ -197,8 +191,9 @@ function bind(): void {
   $('t-report').onclick = () => { if (last) show('report'); else toast('먼저 조건을 입력하고 리포트를 생성하세요') }
   $('t-admin').onclick = () => show('admin')
   $('back').onclick = () => show('input')
-  document.querySelectorAll<HTMLButtonElement>('.info').forEach((b) => {
-    b.onclick = () => { const t = $(b.getAttribute('aria-controls')!); t.hidden = !t.hidden; b.setAttribute('aria-expanded', String(!t.hidden)) }
+  document.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.info'); if (!b) return
+    const t = $(b.getAttribute('aria-controls')!); t.hidden = !t.hidden; b.setAttribute('aria-expanded', String(!t.hidden))
   })
   // 내보내기 기록을 먼저 남겨서 내보낸 파일에도 포함되게 한다
   $('logCsv').onclick = () => { if (!logs.length) { toast('내보낼 기록이 없습니다'); return } addLog('로그 내보내기', `CSV ${Math.min(logs.length + 1, 200)}건`); exportLogsCsv() }
