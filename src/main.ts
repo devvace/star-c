@@ -118,7 +118,7 @@ function renderReport(): void {
   const hit = new Set(byRegion.map((r) => r.code))
   $('bars').innerHTML = byRegion.length ? byRegion.map(({ code, n }) => {
     const hide = mask && n < 5
-    return `<div class="barrow"><span>${SIDO_BY[code].s}</span><span class="track"><span class="fill" style="width:${hide ? 0 : (n / max * 100)}%"></span></span><span class="n">${hide ? '&lt;5' : n + '명'}</span></div>`
+    return `<div class="barrow"><span>${SIDO_BY[code].s}</span><span class="track"><span class="fill" style="width:${hide ? 0 : (n / max * 100)}%"></span></span><span class="n">${hide ? '5명 미만' : n + '명'}</span></div>`
   }).join('')
     + (c.regions.length > byRegion.length ? `<div class="fine">선택했지만 매칭 대상자가 없는 지역: ${c.regions.filter((x) => !hit.has(x)).map((x) => `<span class="mini">${SIDO_BY[x].s}</span>`).join('')}</div>` : '')
     : '<div class="empty">표시할 분포가 없습니다.</div>'
@@ -138,24 +138,31 @@ function renderAdmin(): void {
   const rows = logs.slice().reverse().slice(0, 40)
   $('log').innerHTML = `<thead><tr><th>시각</th><th>권한</th><th>동작</th><th>내용</th></tr></thead><tbody>${
     rows.length ? rows.map((l) => `<tr><td class="num">${esc(l.t)}</td><td>${esc(l.role)}</td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">아직 기록이 없습니다.</td></tr>'}</tbody>`
-  $('logCsvNote').textContent = `저장된 ${logs.length}건 (최근 200건까지 보관, 화면에는 40건 표시)`
+  $('logCsvNote').textContent = `전체 ${logs.length}건 저장됨. 최근 200건까지 보관하고 화면에는 최근 40건만 보입니다.`
   const params = db.exec('SELECT key, response_rate, screening_pass_rate FROM params ORDER BY rowid')[0].values as [string, number, number][]
   $('params').innerHTML = `<thead><tr><th>구분</th><th class="r">예상 반응률</th><th class="r">스크리닝 통과율</th><th class="r">곱</th></tr></thead><tbody>${
     params.map(([k, rr, pass]) => `<tr><td>${esc(k)}</td><td class="r num">${pct(rr)}</td><td class="r num">${pct(pass)}</td><td class="r num">${(rr * pass).toFixed(3)}</td></tr>`).join('')}</tbody>`
-  $('paramsFoot').textContent = `소요기간 가정: 현재 대상자 접촉 완료까지 ${POOL_MONTHS}개월, 월 신규 유입률 ${pct(INFLOW)}, 표시 상한 ${MAX_MONTHS}개월.`
+  $('paramsFoot').textContent = `소요기간 계산 기준: 현재 대상자 접촉에 ${POOL_MONTHS}개월, 이후 매월 ${pct(INFLOW)} 신규 유입, 최대 ${MAX_MONTHS}개월까지 표시`
   const pat = scalar("SELECT COUNT(*) FROM subjects WHERE health_status = '환자'")
-  const bs = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '26'"), gn = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '48'")
-  $('dsSub').textContent = `총 ${total}명 (환자 ${pat}, 건강인 ${total - pat}), 부산 ${bs}명, 경남 ${gn}명. 시드 20261022로 생성한 고정 데이터이며 개별 행은 화면에 표시하지 않습니다.`
+  const consent = scalar('SELECT COUNT(*) FROM subjects WHERE consent_matching = 1')
+  const top = db.exec('SELECT sido_code, COUNT(*) AS n FROM subjects GROUP BY sido_code ORDER BY n DESC, sido_code LIMIT 3')[0].values as [string, number][]
+  $('dsStats').innerHTML = [
+    ['전체 대상자', `${total}명`],
+    ['환자 / 건강인', `${pat}명 / ${total - pat}명`],
+    ['매칭 활용 동의', `${consent}명`],
+    ['인원이 많은 지역', top.map(([c, n]) => `${SIDO_BY[c].s} ${n}명`).join(', ')],
+    ['데이터 출처', '가상 데이터 (시드 20261022, 항상 같은 내용)'],
+  ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')
   const schema = [
-    ['subject_id', '문자', '가명 식별자 (VS-0001 형식)', '—'],
-    ['age', '정수', '만 나이 → 10세 구간으로 비교', '● 연령'],
+    ['subject_id', '문자', '가명 ID (VS-0001 형식)', '—'],
+    ['age', '정수', '만 나이. 10세 구간으로 비교', '● 연령'],
     ['sex', '코드', 'M / F', '● 성별'],
     ['sido_code', '코드', '행정표준코드 시도 2자리', '● 거주지역'],
     ['health_status', '코드', '건강인 / 환자', '● 건강상태'],
-    ['disease_category', '코드', '6개 카테고리, 건강인은 null', '● 질환카테고리'],
-    ['disease_detail', '문자', '기타 카테고리의 세부 질환명', '기타 입력 시 보조'],
-    ['consent_matching', '불리언', '매칭 활용 동의 여부 (가상 데이터는 모두 true)', '전처리 조건']]
-  $('schema').innerHTML = `<thead><tr><th>필드</th><th>형식</th><th>설명</th><th>매칭 변수</th></tr></thead><tbody>${
+    ['disease_category', '코드', '질환 6종 중 하나. 건강인은 비어 있음', '● 질환'],
+    ['disease_detail', '문자', "'기타'일 때의 질환명", '기타 입력 시만'],
+    ['consent_matching', '예/아니오', '매칭 활용 동의 여부. 동의한 사람만 매칭', '사전 조건']]
+  $('schema').innerHTML = `<thead><tr><th>항목</th><th>형식</th><th>설명</th><th>매칭에 사용</th></tr></thead><tbody>${
     schema.map((r) => `<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody>`
 }
 
