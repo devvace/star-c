@@ -74,13 +74,13 @@ function syncForm(): boolean {
   const healthy = state.status === '건강인'
   $<HTMLSelectElement>('disease').disabled = healthy; $('diseaseEtc').hidden = healthy || state.disease !== '기타'
   $('healthyNote').hidden = !healthy
-  $('diseaseWhy').textContent = healthy ? '건강인을 선택하면 질환 조건은 적용하지 않습니다.' : '사업계획서 3-1 목표 시장의 1차 타깃 만성 질환군 (부산·경남 실시기관이 반복 수행하는 3상·4상 대상 질환)'
+  $('diseaseWhy').textContent = healthy ? '건강인은 질환 조건을 보지 않습니다.' : "부산·경남 실시기관에서 3상·4상 시험이 자주 진행되는 만성 질환 6종입니다. 목록에 없으면 '기타'를 고르고 질환명을 입력하세요."
   const okR = state.regions.length > 0, okT = Number.isInteger(state.target) && state.target >= 1
   $('rgErr').hidden = okR; $('tgErr').hidden = okT; $('target').setAttribute('aria-invalid', okT ? 'false' : 'true')
   // 미리보기
   if (okR) {
     const N = matchByRegion(db, state).reduce((s, r) => s + r.n, 0)
-    $('pvN').textContent = N + '명'; $('pvOf').textContent = `가상 데이터셋 ${total}건 중`
+    $('pvN').textContent = N + '명'; $('pvOf').textContent = `가상 데이터 ${total}명 중`
   } else { $('pvN').textContent = '–'; $('pvOf').textContent = '지역을 선택하세요' }
   const parts = condText({ ...state, target: okT ? state.target : '?' })
   const labels = state.status === '환자' ? ['연령', '성별', '구분', '질환', '지역', '목표'] : ['연령', '성별', '구분', '지역', '목표']
@@ -110,11 +110,11 @@ function renderReport(): void {
     <span class="t"><b>${pct(p.rr)}</b><i>예상 반응률</i></span><span class="op">×</span>
     <span class="t"><b>${pct(p.pass)}</b><i>예상 스크리닝 통과율</i></span><span class="op">=</span>
     <span class="t"><b>${f1(E)}</b><i>예상 등록 인원</i></span>
-    <span class="src">파라미터 기준: <b>${esc(key)}</b> · 가상 시나리오 고정값 (문헌값 확정 전). 소요기간은 현재 풀을 ${POOL_MONTHS}개월에 걸쳐 소진하고, 이후 매월 현재 풀의 ${pct(INFLOW)}만큼 신규 매칭자가 유입된다고 가정합니다.</span>`
+    <span class="src">반응률·통과율은 <b>${esc(key)}</b> 기준 가상 값입니다(확정 전). 소요기간은 현재 대상자를 ${POOL_MONTHS}개월 안에 모두 접촉하고, 그 뒤 매월 현재 인원의 ${pct(INFLOW)}가 새로 들어온다고 가정해 계산합니다.</span>`
   let ban = ''
-  if (c.status === '건강인') ban += '<div class="banner warn">건강인 대상 시험은 사업계획서상 비고객 영역입니다. 아래 결과는 참고용입니다.</div>'
-  if (N > 0 && N < 10) ban += `<div class="banner warn">매칭 대상자가 10명 미만입니다. 검증용 데이터셋 규모(${total}건)가 작아 수치 변동이 큽니다. 지역이나 연령 조건을 넓혀 비교해 보세요.</div>`
-  if (N === 0) ban += '<div class="banner bad">조건에 맞는 대상자가 없습니다. 지역을 추가하거나 연령 구간을 바꿔 보세요.</div>'
+  if (c.status === '건강인') ban += '<div class="banner warn">건강인 대상 시험은 주요 서비스 범위 밖입니다. 결과는 참고용입니다.</div>'
+  if (N > 0 && N < 10) ban += `<div class="banner warn">매칭 대상자가 10명 미만입니다. 가상 데이터가 ${total}명뿐이라 숫자 변동이 큽니다. 지역이나 연령을 넓혀 비교해 보세요.</div>`
+  if (N === 0) ban += '<div class="banner bad">조건에 맞는 대상자가 없습니다. 지역을 늘리거나 연령 구간을 바꿔 보세요.</div>'
   $('banners').innerHTML = ban
   // 지역 분포 (match.sql에서 이미 인원 내림차순)
   const max = byRegion.length ? byRegion[0].n : 1
@@ -141,14 +141,14 @@ function renderAdmin(): void {
   const rows = logs.slice().reverse().slice(0, 40)
   $('log').innerHTML = `<thead><tr><th>시각</th><th>권한</th><th>동작</th><th>내용</th></tr></thead><tbody>${
     rows.length ? rows.map((l) => `<tr><td class="num">${esc(l.t)}</td><td>${esc(l.role)}</td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">아직 기록이 없습니다.</td></tr>'}</tbody>`
-  $('logCsvNote').textContent = `저장된 전체 ${logs.length}건 (최근 200건까지 보관, 화면에는 최근 40건 표시)`
+  $('logCsvNote').textContent = `저장된 ${logs.length}건 (최근 200건까지 보관, 화면에는 40건 표시)`
   const params = db.exec('SELECT key, response_rate, screening_pass_rate FROM params ORDER BY rowid')[0].values as [string, number, number][]
   $('params').innerHTML = `<thead><tr><th>구분</th><th class="r">예상 반응률</th><th class="r">스크리닝 통과율</th><th class="r">곱</th></tr></thead><tbody>${
     params.map(([k, rr, pass]) => `<tr><td>${esc(k)}</td><td class="r num">${pct(rr)}</td><td class="r num">${pct(pass)}</td><td class="r num">${(rr * pass).toFixed(3)}</td></tr>`).join('')}</tbody>`
   $('paramsFoot').textContent = `소요기간 가정: 현재 풀 소진 ${POOL_MONTHS}개월, 월 신규 유입률 ${pct(INFLOW)}, 표시 상한 ${MAX_MONTHS}개월.`
   const pat = scalar("SELECT COUNT(*) FROM subjects WHERE health_status = '환자'")
   const bs = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '26'"), gn = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '48'")
-  $('dsSub').textContent = `총 ${total}건 · 환자 ${pat}건 / 건강인 ${total - pat}건 · 부산 ${bs}건, 경남 ${gn}건 · 시드 20261022로 매번 같은 데이터가 생성됩니다. 원본 행은 콘솔 어디에도 노출하지 않습니다.`
+  $('dsSub').textContent = `총 ${total}명 · 환자 ${pat} / 건강인 ${total - pat} · 부산 ${bs}, 경남 ${gn} · 시드 20261022로 생성한 고정 데이터입니다. 개별 행은 화면에 표시하지 않습니다.`
   const schema = [
     ['subject_id', '문자', '가명 식별자 (VS-0001 형식)', '—'],
     ['age', '정수', '만 나이 → 10세 구간으로 비교', '● 연령'],
@@ -194,6 +194,9 @@ function bind(): void {
   $('t-report').onclick = () => { if (last) show('report'); else toast('먼저 조건을 입력하고 리포트를 생성하세요') }
   $('t-admin').onclick = () => show('admin')
   $('back').onclick = () => show('input')
+  document.querySelectorAll<HTMLButtonElement>('.info').forEach((b) => {
+    b.onclick = () => { const t = $(b.getAttribute('aria-controls')!); t.hidden = !t.hidden; b.setAttribute('aria-expanded', String(!t.hidden)) }
+  })
   // 내보내기 기록을 먼저 남겨서 내보낸 파일에도 포함되게 한다
   $('logCsv').onclick = () => { if (!logs.length) { toast('내보낼 기록이 없습니다'); return } addLog('로그 내보내기', `CSV ${Math.min(logs.length + 1, 200)}건`); exportLogsCsv() }
   $('form').addEventListener('submit', (e) => { e.preventDefault(); run(true) })

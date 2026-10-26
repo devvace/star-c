@@ -23,8 +23,8 @@
 
 <main class="wrap">
   <nav class="tabs" role="tablist" aria-label="화면">
-    <button class="tab" role="tab" id="t-input" aria-selected="true" aria-controls="p-input"><span class="k">①</span>조건 입력</button>
-    <button class="tab" role="tab" id="t-report" aria-selected="false" aria-controls="p-report"><span class="k">②</span>예측 리포트</button>
+    <button class="tab" role="tab" id="t-input" aria-selected="true" aria-controls="p-input"><span class="k">1</span>조건 입력</button>
+    <button class="tab" role="tab" id="t-report" aria-selected="false" aria-controls="p-report"><span class="k">2</span>예측 리포트</button>
     <button class="tab" role="tab" id="t-admin" aria-selected="false" aria-controls="p-admin"><span class="k">관리</span>권한·로그·데이터 구조</button>
   </nav>
 
@@ -33,14 +33,14 @@
     <div class="grid2">
       <form class="sheet" id="form" novalidate>
         <div class="field">
-          <label for="age">연령 범위<small class="lbl">age_band</small></label>
+          <div class="lbl"><label for="age">연령 범위</label><button type="button" class="info" aria-controls="tip-age" aria-expanded="false" title="설명">!</button></div>
           <div class="ctrl">
             <select class="in" id="age"></select>
-            <div class="why">식약처 임상시험 보고 양식 등에서 통상 사용하는 10세 단위 구간</div>
+            <div class="tip" id="tip-age" hidden>식약처 임상시험 보고 양식에서 쓰는 10세 단위 구간입니다.</div>
           </div>
         </div>
         <div class="field">
-          <div class="lbl">성별<small>sex</small></div>
+          <div class="lbl">성별</div>
           <div class="ctrl">
             <div class="seg" role="radiogroup" aria-label="성별">
               <label><input type="radio" name="sex" id="sex-m" value="M" checked><span>남성</span></label>
@@ -49,25 +49,25 @@
           </div>
         </div>
         <div class="field">
-          <div class="lbl">건강인/환자 구분<small>health_status</small></div>
+          <div class="lbl">건강인/환자 구분</div>
           <div class="ctrl">
             <div class="seg" role="radiogroup" aria-label="건강인/환자 구분">
               <label><input type="radio" name="status" id="st-h" value="건강인"><span>건강인</span></label>
               <label><input type="radio" name="status" id="st-p" value="환자" checked><span>환자</span></label>
             </div>
-            <div class="note" id="healthyNote" hidden>건강인 대상 1상·생동성 시험은 사업계획서상 비고객 영역입니다. 결과는 참고용으로만 제공됩니다.</div>
+            <div class="note" id="healthyNote" hidden>건강인 대상 시험(1상·생동성)은 주요 서비스 범위가 아닙니다. 결과는 참고용입니다.</div>
           </div>
         </div>
         <div class="field">
-          <label for="disease">질환 카테고리<small class="lbl">disease_category</small></label>
+          <div class="lbl"><label for="disease">질환 카테고리</label><button type="button" class="info" aria-controls="diseaseWhy" aria-expanded="false" title="설명">!</button></div>
           <div class="ctrl">
             <select class="in" id="disease"></select>
             <input class="in" id="diseaseEtc" placeholder="질환명 직접 입력 (예: 통풍)" hidden>
-            <div class="why" id="diseaseWhy">사업계획서 3-1 목표 시장의 1차 타깃 만성 질환군 (부산·경남 실시기관이 반복 수행하는 3상·4상 대상 질환)</div>
+            <div class="tip" id="diseaseWhy" hidden></div>
           </div>
         </div>
         <div class="field">
-          <div class="lbl">목표 지역<small>sido_code · 다중 선택</small></div>
+          <div class="lbl">목표 지역<button type="button" class="info" aria-controls="tip-region" aria-expanded="false" title="설명">!</button></div>
           <div class="ctrl">
             <div class="regions" id="regions"></div>
             <div class="regions-tools">
@@ -77,15 +77,14 @@
               <button type="button" class="linkbtn" id="rgNone">선택 해제</button>
             </div>
             <div class="err" id="rgErr" hidden>목표 지역을 하나 이상 선택하세요.</div>
-            <div class="why">행정표준코드 기준 17개 시·도. 1차 타깃인 부산광역시·경상남도를 상단에 배치했습니다.</div>
+            <div class="tip" id="tip-region" hidden>전국 17개 시·도(행정표준코드 기준)이며 여러 곳을 고를 수 있습니다. 주요 대상 지역인 부산·경남을 맨 앞에 두었습니다.</div>
           </div>
         </div>
         <div class="field">
-          <label for="target">목표 대상자 수<small class="lbl">target_n</small></label>
+          <div class="lbl"><label for="target">목표 대상자 수</label></div>
           <div class="ctrl">
             <input class="in" id="target" type="number" min="1" step="1" inputmode="numeric" style="max-width:160px">
             <div class="err" id="tgErr" hidden>1명 이상의 정수를 입력하세요.</div>
-            <div class="why">시험별 목표 인원이 다르므로 직접 입력합니다.</div>
           </div>
         </div>
         <div class="actions">
@@ -96,13 +95,10 @@
 
       <aside class="side">
         <div class="sheet">
-          <div class="eyebrow">하드필터 1차 매칭 미리보기</div>
+          <div class="eyebrow">매칭 대상자 미리보기<button type="button" class="info" aria-controls="tip-rule" aria-expanded="false" title="매칭 규칙">!</button></div>
+          <div class="tip" id="tip-rule" hidden>연령·성별·지역·질환·건강상태 다섯 조건이 <b>모두 맞는</b> 대상자만 셉니다. 가중치나 유사도는 쓰지 않습니다. 건강인은 질환 조건을 보지 않습니다.</div>
           <div class="preview"><span class="big" id="pvN">–</span><span class="why" id="pvOf"></span></div>
           <dl class="kv" id="pvKv"></dl>
-        </div>
-        <div class="sheet">
-          <div class="eyebrow">매칭 규칙</div>
-          <p class="why" style="margin:8px 0 0">다섯 변수(연령·성별·거주지역·질환카테고리·건강상태)가 <b>모두 일치</b>하는 대상자만 집계합니다. 가중치나 유사도 점수는 쓰지 않습니다. 건강인을 선택하면 질환 조건은 적용하지 않습니다.</p>
         </div>
       </aside>
     </div>
@@ -127,10 +123,10 @@
         <div class="bars" id="bars"></div>
       </div>
       <div class="card">
-        <h3>권장 실시기관</h3>
-        <div class="sub">매칭률 60% + 접근성 40% 가중 점수 상위 5곳 · 기관명은 가상</div>
+        <h3>권장 실시기관<button type="button" class="info" aria-controls="tip-inst" aria-expanded="false" title="점수 계산 방법">!</button></h3>
+        <div class="sub">매칭률 60% + 접근성 40% 점수 상위 5곳 (기관명은 가상)</div>
+        <div class="tip" id="tip-inst" hidden>매칭률은 기관이 있는 시·도에 사는 매칭 대상자의 비율입니다. 접근성은 대상자별 거리 점수의 평균입니다(같은 시·도 1.0, 같은 권역 0.6, 그 외 0.2). 해당 질환 시험을 하지 않는 기관은 뺍니다.</div>
         <div class="tbl"><table id="inst"></table></div>
-        <div class="fine">매칭률: 기관 소재 시·도에 거주하는 매칭 대상자 비중. 접근성: 매칭 대상자별 근접도 평균(같은 시·도 1.0, 같은 권역 0.6, 그 외 0.2). 해당 질환을 수행하지 않는 기관은 제외합니다.</div>
       </div>
     </div>
     <div class="actions" style="margin-top:16px;border:0;border-radius:var(--r-card);box-shadow:var(--shadow-card)">
@@ -140,20 +136,20 @@
 
   <!-- 관리 화면 -->
   <section class="panel" id="p-admin" role="tabpanel" aria-labelledby="t-admin" hidden>
-    <div id="adminLocked" class="sheet lock" hidden>이 화면은 신트리아 관리자 권한에서만 열립니다. 의뢰자 권한은 매칭·예측 결과값만 조회할 수 있습니다.</div>
+    <div id="adminLocked" class="sheet lock" hidden>관리자 권한에서만 열립니다. 의뢰자는 매칭·예측 결과만 볼 수 있습니다.</div>
     <div id="adminBody" class="admin-grid">
       <div class="card wide">
         <h3>사용 이력 로그</h3>
-        <div class="sub">권한 전환과 조회 실행이 기록됩니다. 조회 기록에는 조건과 집계값만 남고 대상자 식별값은 남지 않습니다.</div>
+        <div class="sub">권한 전환과 조회가 기록됩니다. 조건과 집계값만 남고 대상자 식별값은 남지 않습니다.</div>
         <div class="tbl"><table id="log"></table></div>
         <div class="toggle"><button class="btn" type="button" id="logCsv">CSV 내보내기</button><span class="why" id="logCsvNote"></span></div>
       </div>
       <div class="card">
         <h3>고정 파라미터</h3>
-        <div class="sub">반응률·스크리닝 통과율은 질환별 고정값입니다. 현재 값은 가상 시나리오이며 문헌값 확정 후 교체합니다.</div>
+        <div class="sub">질환별 반응률·스크리닝 통과율입니다. 지금은 가상 값이며 확정 후 교체합니다.</div>
         <div class="tbl"><table id="params"></table></div>
         <div class="fine" id="paramsFoot"></div>
-        <label class="toggle"><input type="checkbox" id="mask"> 지역별 분포에서 5명 미만 셀 마스킹 (실데이터 연동 시 켜기 권장)</label>
+        <label class="toggle"><input type="checkbox" id="mask"> 지역별 분포에서 5명 미만은 숫자를 가림 (실데이터 연동 시 권장)</label>
       </div>
       <div class="card">
         <h3>데이터 분리 구조</h3>
@@ -167,7 +163,7 @@
           <div class="arr">→</div>
           <div class="box"><b>의뢰자 콘솔</b>결과값 조회 · 로그 기록</div>
         </div>
-        <div class="fine">파일럿에서는 맨 앞 단계 없이 매칭용 DB 자리에 검증용 가상 데이터셋을 둡니다.</div>
+        <div class="fine">파일럿에서는 앞 단계 없이 매칭용 DB 자리에 가상 데이터셋을 둡니다.</div>
       </div>
       <div class="card wide">
         <h3>검증용 가상 데이터셋</h3>
