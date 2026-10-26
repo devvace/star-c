@@ -40,6 +40,8 @@ function condText(c: Omit<Condition, 'target'> & { target: number | string }): s
   const rg = c.regions.length === 17 ? '전국' : c.regions.map((x) => SIDO_BY[x].s).join(', ')
   parts.push(rg, `목표 ${c.target}명`); return parts
 }
+// 지역을 작은 태그로 표시 (화면용). 로그 문자열은 condText의 쉼표 나열을 그대로 쓴다
+const regionTags = (c: Condition, cls = 'mini') => c.regions.length === 17 ? '<span class="' + cls + '">전국</span>' : c.regions.map((x) => `<span class="${cls}">${SIDO_BY[x].s}</span>`).join('')
 // 로그에는 조건과 집계값만 남긴다 (subject_id 없음)
 function addLog(action: string, detail: string): void {
   logs.push({ t: ts(new Date()), role: role === 'admin' ? '관리자' : '의뢰자', action, detail })
@@ -74,7 +76,7 @@ function syncForm(): boolean {
   const healthy = state.status === '건강인'
   $<HTMLSelectElement>('disease').disabled = healthy; $('diseaseEtc').hidden = healthy || state.disease !== '기타'
   $('healthyNote').hidden = !healthy
-  $('diseaseWhy').textContent = healthy ? '건강인은 질환 조건을 보지 않습니다.' : "부산과 경남 실시기관에서 3상, 4상 시험이 자주 진행되는 만성 질환 6종입니다. 목록에 없으면 '기타'를 고르고 질환명을 입력하세요."
+  $('diseaseWhy').textContent = healthy ? '건강인은 질환 조건을 보지 않습니다.' : "부산과 경남 실시기관에서 3상/4상 시험이 자주 진행되는 만성 질환 6종입니다. 목록에 없으면 '기타'를 고르고 질환명을 입력하세요."
   const okR = state.regions.length > 0, okT = Number.isInteger(state.target) && state.target >= 1
   $('rgErr').hidden = okR; $('tgErr').hidden = okT; $('target').setAttribute('aria-invalid', okT ? 'false' : 'true')
   // 미리보기
@@ -84,7 +86,7 @@ function syncForm(): boolean {
   } else { $('pvN').textContent = '–'; $('pvOf').textContent = '지역을 선택하세요' }
   const parts = condText({ ...state, target: okT ? state.target : '?' })
   const labels = state.status === '환자' ? ['연령', '성별', '구분', '질환', '지역', '목표'] : ['연령', '성별', '구분', '지역', '목표']
-  $('pvKv').innerHTML = parts.map((p, i) => `<dt>${labels[i]}</dt><dd>${esc(p.replace(/^목표 /, ''))}</dd>`).join('')
+  $('pvKv').innerHTML = parts.map((p, i) => `<dt>${labels[i]}</dt><dd>${labels[i] === '지역' ? regionTags(state) : esc(p.replace(/^목표 /, ''))}</dd>`).join('')
   return okR && okT
 }
 
@@ -92,19 +94,20 @@ function syncForm(): boolean {
 function renderReport(): void {
   if (!last) return
   const { c, N, key, p, E, months, reach, byRegion, insts, at } = last
-  $('condChips').innerHTML = condText(c).map((x) => `<span>${esc(x)}</span>`).join('')
-  $('stamp').textContent = '생성 ' + ts(at) + ', 가상 데이터 ' + total + '명 기준'
+  const regionIdx = c.status === '환자' ? 4 : 3
+  $('condChips').innerHTML = condText(c).map((x, i) => i === regionIdx ? regionTags(c, '') : `<span>${esc(x)}</span>`).join('')
+  $('stamp').textContent = '생성 ' + ts(at) + ' (가상 데이터 ' + total + '명 기준)'
   const ach = Math.min(1, E / c.target)
   let durV: string, durS: string, durPill: string
   if (reach === 'none') { durV = '—'; durS = '매칭 대상자가 없어 계산할 수 없습니다'; durPill = '<span class="pill bad">산출 불가</span>' }
-  else if (reach === 'pool') { durV = months! < 1 ? `${Math.max(1, Math.round(months! * 4.3))}<small>주</small>` : `${f1(months!)}<small>개월</small>`; durS = '현재 매칭 풀만으로 목표 달성'; durPill = '<span class="pill ok">현 풀로 달성</span>' }
-  else if (reach === 'inflow') { durV = `${f1(months!)}<small>개월</small>`; durS = `현재 풀 ${POOL_MONTHS}개월 + 신규 유입분 모집`; durPill = '<span class="pill warn">신규 유입 필요</span>' }
+  else if (reach === 'pool') { durV = months! < 1 ? `${Math.max(1, Math.round(months! * 4.3))}<small>주</small>` : `${f1(months!)}<small>개월</small>`; durS = '현재 대상자만으로 목표 달성'; durPill = '<span class="pill ok">현재 대상자로 달성</span>' }
+  else if (reach === 'inflow') { durV = `${f1(months!)}<small>개월</small>`; durS = `현재 대상자 ${POOL_MONTHS}개월 접촉 후 신규 유입으로 모집`; durPill = '<span class="pill warn">신규 유입 필요</span>' }
   else { durV = `${MAX_MONTHS}+<small>개월</small>`; durS = `신규 유입을 반영해도 ${MAX_MONTHS}개월 안에 달성하기 어렵습니다`; durPill = '<span class="pill bad">달성 곤란</span>' }
   $('kpis').innerHTML = `
     <div class="kpi"><span class="l">매칭 대상자 수</span><span class="v">${N}<small>명</small></span><span class="s">하드필터 1차 매칭</span></div>
     <div class="kpi"><span class="l">예상 등록 인원</span><span class="v">${f1(E)}<small>명</small></span><span class="s">반응률과 통과율 적용</span></div>
     <div class="kpi"><span class="l">예상 소요기간</span><span class="v">${durV}</span>${durPill}<span class="s">${durS}</span></div>
-    <div class="kpi"><span class="l">현재 풀 기준 목표 달성률</span><span class="v">${pct(ach)}</span><span class="s">목표 ${c.target}명 대비</span></div>`
+    <div class="kpi"><span class="l">현재 대상자 기준 목표 달성률</span><span class="v">${pct(ach)}</span><span class="s">목표 ${c.target}명 대비</span></div>`
   $('formula').innerHTML = `
     <span class="t"><b>${N}</b><i>매칭 대상자 수</i></span><span class="op">×</span>
     <span class="t"><b>${pct(p.rr)}</b><i>예상 반응률</i></span><span class="op">×</span>
@@ -123,7 +126,7 @@ function renderReport(): void {
     const hide = mask && n < 5
     return `<div class="barrow"><span>${SIDO_BY[code].s}</span><span class="track"><span class="fill" style="width:${hide ? 0 : (n / max * 100)}%"></span></span><span class="n">${hide ? '&lt;5' : n + '명'}</span></div>`
   }).join('')
-    + (c.regions.length > byRegion.length ? `<div class="fine">선택했지만 매칭 대상자가 없는 지역: ${c.regions.filter((x) => !hit.has(x)).map((x) => SIDO_BY[x].s).join(', ')}</div>` : '')
+    + (c.regions.length > byRegion.length ? `<div class="fine">선택했지만 매칭 대상자가 없는 지역: ${c.regions.filter((x) => !hit.has(x)).map((x) => `<span class="mini">${SIDO_BY[x].s}</span>`).join('')}</div>` : '')
     : '<div class="empty">표시할 분포가 없습니다.</div>'
   // 기관
   $('inst').innerHTML = insts.length && N ? `<thead><tr><th>#</th><th>기관 (가상)</th><th>소재</th><th class="r">매칭률</th><th class="r">접근성</th><th class="r">점수</th></tr></thead><tbody>${
@@ -145,7 +148,7 @@ function renderAdmin(): void {
   const params = db.exec('SELECT key, response_rate, screening_pass_rate FROM params ORDER BY rowid')[0].values as [string, number, number][]
   $('params').innerHTML = `<thead><tr><th>구분</th><th class="r">예상 반응률</th><th class="r">스크리닝 통과율</th><th class="r">곱</th></tr></thead><tbody>${
     params.map(([k, rr, pass]) => `<tr><td>${esc(k)}</td><td class="r num">${pct(rr)}</td><td class="r num">${pct(pass)}</td><td class="r num">${(rr * pass).toFixed(3)}</td></tr>`).join('')}</tbody>`
-  $('paramsFoot').textContent = `소요기간 가정: 현재 풀 소진 ${POOL_MONTHS}개월, 월 신규 유입률 ${pct(INFLOW)}, 표시 상한 ${MAX_MONTHS}개월.`
+  $('paramsFoot').textContent = `소요기간 가정: 현재 대상자 접촉 완료까지 ${POOL_MONTHS}개월, 월 신규 유입률 ${pct(INFLOW)}, 표시 상한 ${MAX_MONTHS}개월.`
   const pat = scalar("SELECT COUNT(*) FROM subjects WHERE health_status = '환자'")
   const bs = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '26'"), gn = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '48'")
   $('dsSub').textContent = `총 ${total}명 (환자 ${pat}, 건강인 ${total - pat}), 부산 ${bs}명, 경남 ${gn}명. 시드 20261022로 생성한 고정 데이터이며 개별 행은 화면에 표시하지 않습니다.`
