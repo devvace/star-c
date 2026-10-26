@@ -1,0 +1,4 @@
+# 납품용 git archive(zip)에서 제외할 파일
+CLAUDE.md export-ignore
+.gitattributes export-ignore
+.claude export-ignore

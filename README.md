@@ -81,4 +81,4 @@ npm run build        # → dist/index.html
 npm run gen:data     # data/*.csv 다시 생성 (보통 필요 없음)
 ```
 
-Node.js 20 이상이 필요합니다. 데이터(`data/*.csv`)를 바꾸면 반드시 다시 빌드해야 결과물에 반영됩니다. 자세한 구조와 작업 이력은 `CLAUDE.md`를 보세요.
+Node.js 20 이상이 필요합니다. 데이터(`data/*.csv`)를 바꾸면 반드시 다시 빌드해야 결과물에 반영됩니다. 데이터 구조는 `src/db/schema.sql`, 매칭 쿼리는 `src/db/match.sql`에 있습니다.
