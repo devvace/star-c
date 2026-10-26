@@ -8,6 +8,9 @@ img{max-width:100%}
 #srcNote{display:none!important} /* 빌드본에서는 숨김. 원본 index.html을 직접 열었을 때만 보임 */
 
 /* Layout: 운영 콘솔 — 상단 고정 바 + 단계 탭, 입력은 폼/요약 2단, 리포트는 요약 지표 → 근거 → 분포·기관 */
+/* 신트리아 홈페이지와 같은 Pretendard. 오프라인(file://)에서도 보이도록 빌드 시 파일 안에 인라인됨 (OFL, src/fonts/LICENSE.txt) */
+@font-face{font-family:"Pretendard";font-weight:100 900;font-style:normal;font-display:swap;src:url(./fonts/PretendardVariable.woff2) format("woff2")}
+
 :root{
   /* 신트리아 홈페이지 톤: 배경 #f4f5f6 · 포인트 #4393f0 · 본문 #111/#666 · 구분선 #e8eaf0 */
   --bg:#f4f5f6; --surface:#ffffff; --sunken:#f8f9fb; --ink:#111111; --muted:#666666; --line:#e8eaf0; --line-strong:#dcdddf;
