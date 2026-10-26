@@ -1,0 +1,625 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>STAR-C 파일럿 콘솔</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: 운영 콘솔 — 상단 고정 바 + 단계 탭, 입력은 폼/요약 2단, 리포트는 요약 지표 → 근거 → 분포·기관 */
+:root{
+  --bg:#eef2f3; --surface:#ffffff; --sunken:#f6f8f9; --ink:#14212b; --muted:#5a6a73; --line:#d5dde1;
+  --accent:#0b6b6f; --accent-soft:#dcefee; --accent-ink:#ffffff;
+  --warn:#9a6200; --warn-soft:#fbf0d9; --bad:#a83636; --bad-soft:#f8e3e3; --ok:#2c7a4b; --ok-soft:#e1f2e7;
+  --bar:#0b6b6f; --bar-track:#e3eaec;
+  --f-body:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1518; --surface:#151f23; --sunken:#111a1d; --ink:#e2eaec; --muted:#93a4ab; --line:#27363c;
+  --accent:#4fb6b2; --accent-soft:#173a3b; --accent-ink:#06201f;
+  --warn:#e3a94a; --warn-soft:#3a2d14; --bad:#ec8a8a; --bad-soft:#3d1e1f; --ok:#6cc790; --ok-soft:#173226;
+  --bar:#4fb6b2; --bar-track:#22313a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1518; --surface:#151f23; --sunken:#111a1d; --ink:#e2eaec; --muted:#93a4ab; --line:#27363c;
+  --accent:#4fb6b2; --accent-soft:#173a3b; --accent-ink:#06201f;
+  --warn:#e3a94a; --warn-soft:#3a2d14; --bad:#ec8a8a; --bad-soft:#3d1e1f; --ok:#6cc790; --ok-soft:#173226;
+  --bar:#4fb6b2; --bar-track:#22313a; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:600}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand b{font-family:var(--f-mono);font-weight:500;font-size:17px;letter-spacing:.04em}
+.brand span{color:var(--muted);font-size:12.5px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:3px 8px;border-radius:99px;background:var(--warn-soft);color:var(--warn);font-weight:500;white-space:nowrap}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.role{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.role select{border:1px solid var(--line);background:var(--sunken);border-radius:var(--r);padding:5px 8px;font-size:13px}
+
+/* tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-top:22px;overflow-x:auto}
+.tab{appearance:none;border:0;background:none;padding:10px 14px;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab .k{font-family:var(--f-mono);font-size:11.5px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab[aria-selected="true"] .k{border-color:var(--accent);color:var(--accent)}
+.tab:disabled{opacity:.45;cursor:not-allowed}
+.panel{padding-block:22px 48px}
+
+/* form */
+.grid2{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.field{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px 18px;padding:16px 18px;border-top:1px solid var(--line)}
+.field:first-child{border-top:0}
+@media (max-width:560px){.field{grid-template-columns:minmax(0,1fr)}}
+.field>label,.field>.lbl{font-weight:600;font-size:13.5px;padding-top:6px}
+.lbl small,.field>label small{display:block;font-weight:400;color:var(--muted);font-size:11.5px;font-family:var(--f-mono);margin-top:2px}
+.ctrl{display:flex;flex-direction:column;gap:8px;min-width:0}
+.why{font-size:12px;color:var(--muted);line-height:1.5}
+select.in,input.in{border:1px solid var(--line);background:var(--sunken);border-radius:var(--r);padding:8px 10px;width:100%;max-width:340px}
+input.in:invalid,input.in[aria-invalid="true"]{border-color:var(--bad)}
+.err{color:var(--bad);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;width:max-content;max-width:100%}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0}
+.seg span{display:block;padding:7px 16px;border-left:1px solid var(--line);background:var(--sunken)}
+.seg label:first-child span{border-left:0}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-2px}
+.regions{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:6px}
+.chip{position:relative;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:var(--r);padding:5px 8px;cursor:pointer;background:var(--sunken);font-size:13px}
+.chip input{accent-color:var(--accent);margin:0}
+.chip .code{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-left:auto}
+.chip.pri{border-style:dashed}
+.chip:has(input:checked){border-color:var(--accent);background:var(--accent-soft);border-style:solid}
+.regions-tools{display:flex;gap:10px;font-size:12px}
+.linkbtn{appearance:none;background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-size:12px}
+.note{font-size:12px;padding:8px 10px;border-radius:var(--r);background:var(--warn-soft);color:var(--warn)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;padding:16px 18px;border-top:1px solid var(--line);background:var(--sunken);border-radius:0 0 var(--r) var(--r)}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:9px 16px;cursor:pointer;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn:hover{filter:brightness(1.05)}
+
+/* side summary */
+.side{display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px)}
+.side .sheet{padding:16px 18px}
+.eyebrow{font-size:11.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;font-weight:600}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin-top:10px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right}
+.big{font-family:var(--f-mono);font-size:30px;font-weight:500;line-height:1.1}
+.preview{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:8px}
+
+/* report */
+.cond{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cond span{font-size:12.5px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--surface)}
+.rhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+.rhead h2{font-size:20px}
+.stamp{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px}
+@media (max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi .l{font-size:12.5px;color:var(--muted)}
+.kpi .v{font-family:var(--f-mono);font-size:28px;font-weight:500;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:14px;color:var(--muted);margin-left:3px;font-family:var(--f-body)}
+.kpi .s{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;width:max-content}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.formula{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:13px}
+.formula .t{display:flex;flex-direction:column;align-items:center;gap:1px}
+.formula .t b{font-family:var(--f-mono);font-size:18px;font-weight:500}
+.formula .t i{font-style:normal;font-size:11.5px;color:var(--muted)}
+.formula .op{font-family:var(--f-mono);color:var(--muted);font-size:16px}
+.formula .src{flex-basis:100%;font-size:11.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:16px;margin-top:16px}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;min-width:0}
+.card h3{font-size:15px}
+.card .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.bars{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.barrow{display:grid;grid-template-columns:78px minmax(0,1fr) 54px;gap:10px;align-items:center;font-size:13px}
+.track{height:12px;background:var(--bar-track);border-radius:3px;overflow:hidden}
+.fill{height:100%;background:var(--bar);border-radius:3px}
+.barrow .n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);font-size:13px;padding:18px 0}
+.tbl{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.03em;white-space:nowrap}
+td.r,th.r{text-align:right}
+td .meter{display:inline-block;width:46px;height:6px;background:var(--bar-track);border-radius:3px;vertical-align:middle;margin-right:6px;overflow:hidden}
+td .meter i{display:block;height:100%;background:var(--bar)}
+.rank{font-family:var(--f-mono);color:var(--muted)}
+.fine{font-size:11.5px;color:var(--muted);margin-top:10px}
+.banner{margin-top:14px;padding:10px 14px;border-radius:var(--r);font-size:13px}
+.banner.warn{background:var(--warn-soft);color:var(--warn)} .banner.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* admin */
+.admin-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.admin-grid{grid-template-columns:minmax(0,1fr)}}
+.admin-grid .wide{grid-column:1/-1}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin-top:12px}
+.flow .box{flex:1 1 150px;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;background:var(--sunken);font-size:12.5px;min-width:0}
+.flow .box b{display:block;font-size:13px;margin-bottom:2px}
+.flow .box.sep{border-style:dashed}
+.flow .arr{align-self:center;font-family:var(--f-mono);color:var(--muted)}
+.lock{padding:40px 18px;text-align:center;color:var(--muted)}
+.toggle{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
+.toggle input{accent-color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:var(--r);font-size:13px;z-index:20}
+@media (prefers-reduced-motion:no-preference){.fill,td .meter i{transition:width .35s ease}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><b>STAR-C</b><span>의뢰자용 모집 가능성 예측·매칭 콘솔</span></div>
+    <span class="tag" title="실 대상자 DB와 연동되지 않습니다">파일럿 · 검증용 가상 데이터셋</span>
+    <div class="role">
+      <label for="role">접속 권한</label>
+      <select id="role">
+        <option value="sponsor">의뢰자 (결과 조회)</option>
+        <option value="admin">신트리아 관리자</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs" role="tablist" aria-label="화면">
+    <button class="tab" role="tab" id="t-input" aria-selected="true" aria-controls="p-input"><span class="k">①</span>조건 입력</button>
+    <button class="tab" role="tab" id="t-report" aria-selected="false" aria-controls="p-report"><span class="k">②</span>예측 리포트</button>
+    <button class="tab" role="tab" id="t-admin" aria-selected="false" aria-controls="p-admin"><span class="k">관리</span>권한·로그·데이터 구조</button>
+  </nav>
+
+  <!-- ① 입력 화면 -->
+  <section class="panel" id="p-input" role="tabpanel" aria-labelledby="t-input">
+    <div class="grid2">
+      <form class="sheet" id="form" novalidate>
+        <div class="field">
+          <label for="age">연령 범위<small class="lbl">age_band</small></label>
+          <div class="ctrl">
+            <select class="in" id="age"></select>
+            <div class="why">식약처 임상시험 보고 양식 등에서 통상 사용하는 10세 단위 구간</div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="lbl">성별<small>sex</small></div>
+          <div class="ctrl">
+            <div class="seg" role="radiogroup" aria-label="성별">
+              <label><input type="radio" name="sex" id="sex-m" value="M" checked><span>남성</span></label>
+              <label><input type="radio" name="sex" id="sex-f" value="F"><span>여성</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="lbl">건강인/환자 구분<small>health_status</small></div>
+          <div class="ctrl">
+            <div class="seg" role="radiogroup" aria-label="건강인/환자 구분">
+              <label><input type="radio" name="status" id="st-h" value="건강인"><span>건강인</span></label>
+              <label><input type="radio" name="status" id="st-p" value="환자" checked><span>환자</span></label>
+            </div>
+            <div class="note" id="healthyNote" hidden>건강인 대상 1상·생동성 시험은 사업계획서상 비고객 영역입니다. 결과는 참고용으로만 제공됩니다.</div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="disease">질환 카테고리<small class="lbl">disease_category</small></label>
+          <div class="ctrl">
+            <select class="in" id="disease"></select>
+            <input class="in" id="diseaseEtc" placeholder="질환명 직접 입력 (예: 통풍)" hidden>
+            <div class="why" id="diseaseWhy">사업계획서 3-1 목표 시장의 1차 타깃 만성 질환군 (부산·경남 실시기관이 반복 수행하는 3상·4상 대상 질환)</div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="lbl">목표 지역<small>sido_code · 다중 선택</small></div>
+          <div class="ctrl">
+            <div class="regions" id="regions"></div>
+            <div class="regions-tools">
+              <button type="button" class="linkbtn" id="rgPrimary">부산·경남만</button>
+              <button type="button" class="linkbtn" id="rgSouth">동남권(부산·울산·경남)</button>
+              <button type="button" class="linkbtn" id="rgAll">전국</button>
+              <button type="button" class="linkbtn" id="rgNone">선택 해제</button>
+            </div>
+            <div class="err" id="rgErr" hidden>목표 지역을 하나 이상 선택하세요.</div>
+            <div class="why">행정표준코드 기준 17개 시·도. 1차 타깃인 부산광역시·경상남도를 상단에 배치했습니다.</div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="target">목표 대상자 수<small class="lbl">target_n</small></label>
+          <div class="ctrl">
+            <input class="in" id="target" type="number" min="1" step="1" inputmode="numeric" style="max-width:160px">
+            <div class="err" id="tgErr" hidden>1명 이상의 정수를 입력하세요.</div>
+            <div class="why">시험별 목표 인원이 다르므로 직접 입력합니다.</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="submit">예측 리포트 생성</button>
+          <button class="btn" type="button" id="reset">예시 조건으로 되돌리기</button>
+        </div>
+      </form>
+
+      <aside class="side">
+        <div class="sheet">
+          <div class="eyebrow">하드필터 1차 매칭 미리보기</div>
+          <div class="preview"><span class="big" id="pvN">–</span><span class="why" id="pvOf"></span></div>
+          <dl class="kv" id="pvKv"></dl>
+        </div>
+        <div class="sheet">
+          <div class="eyebrow">매칭 규칙</div>
+          <p class="why" style="margin:8px 0 0">다섯 변수(연령·성별·거주지역·질환카테고리·건강상태)가 <b>모두 일치</b>하는 대상자만 집계합니다. 가중치나 유사도 점수는 쓰지 않습니다. 건강인을 선택하면 질환 조건은 적용하지 않습니다.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ② 결과 화면 -->
+  <section class="panel" id="p-report" role="tabpanel" aria-labelledby="t-report" hidden>
+    <div class="rhead">
+      <div>
+        <h2>모집 가능성 예측 리포트</h2>
+        <div class="cond" id="condChips"></div>
+      </div>
+      <div class="stamp" id="stamp"></div>
+    </div>
+    <div id="banners"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="formula" id="formula"></div>
+    <div class="two">
+      <div class="card">
+        <h3>지역별 분포</h3>
+        <div class="sub">매칭 대상자의 거주 시·도 기준</div>
+        <div class="bars" id="bars"></div>
+      </div>
+      <div class="card">
+        <h3>권장 실시기관</h3>
+        <div class="sub">매칭률 60% + 접근성 40% 가중 점수 상위 5곳 · 기관명은 가상</div>
+        <div class="tbl"><table id="inst"></table></div>
+        <div class="fine">매칭률: 기관 소재 시·도에 거주하는 매칭 대상자 비중. 접근성: 매칭 대상자별 근접도 평균(같은 시·도 1.0, 같은 권역 0.6, 그 외 0.2). 해당 질환을 수행하지 않는 기관은 제외합니다.</div>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:16px;border:1px solid var(--line);border-radius:var(--r)">
+      <button class="btn" type="button" id="back">조건 수정</button>
+    </div>
+  </section>
+
+  <!-- 관리 화면 -->
+  <section class="panel" id="p-admin" role="tabpanel" aria-labelledby="t-admin" hidden>
+    <div id="adminLocked" class="sheet lock" hidden>이 화면은 신트리아 관리자 권한에서만 열립니다. 의뢰자 권한은 매칭·예측 결과값만 조회할 수 있습니다.</div>
+    <div id="adminBody" class="admin-grid">
+      <div class="card wide">
+        <h3>사용 이력 로그</h3>
+        <div class="sub">권한 전환과 조회 실행이 기록됩니다. 조회 기록에는 조건과 집계값만 남고 대상자 식별값은 남지 않습니다.</div>
+        <div class="tbl"><table id="log"></table></div>
+      </div>
+      <div class="card">
+        <h3>고정 파라미터</h3>
+        <div class="sub">반응률·스크리닝 통과율은 질환별 고정값입니다. 현재 값은 가상 시나리오이며 문헌값 확정 후 교체합니다.</div>
+        <div class="tbl"><table id="params"></table></div>
+        <div class="fine" id="paramsFoot"></div>
+        <label class="toggle"><input type="checkbox" id="mask"> 지역별 분포에서 5명 미만 셀 마스킹 (실데이터 연동 시 켜기 권장)</label>
+      </div>
+      <div class="card">
+        <h3>데이터 분리 구조</h3>
+        <div class="sub">의뢰자 콘솔은 집계 결과만 받습니다. 실데이터 연동 시에도 대상자용 서비스 DB와 분리합니다.</div>
+        <div class="flow">
+          <div class="box"><b>대상자용 서비스 DB</b>원본 개인정보 · 동의 이력</div>
+          <div class="arr">→</div>
+          <div class="box sep"><b>매칭용 분리 DB</b>가명 ID + 매칭 변수 5종만 적재</div>
+          <div class="arr">→</div>
+          <div class="box"><b>집계 API</b>인원 수 · 분포만 반환</div>
+          <div class="arr">→</div>
+          <div class="box"><b>의뢰자 콘솔</b>결과값 조회 · 로그 기록</div>
+        </div>
+        <div class="fine">파일럿에서는 맨 앞 단계 없이 매칭용 DB 자리에 검증용 가상 데이터셋을 둡니다.</div>
+      </div>
+      <div class="card wide">
+        <h3>검증용 가상 데이터셋</h3>
+        <div class="sub" id="dsSub"></div>
+        <div class="tbl"><table id="schema"></table></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- 기준 값 ---------- */
+const AGE_BANDS=[
+  {id:"19-29",label:"19~29세",min:19,max:29},{id:"30-39",label:"30~39세",min:30,max:39},
+  {id:"40-49",label:"40~49세",min:40,max:49},{id:"50-59",label:"50~59세",min:50,max:59},
+  {id:"60-69",label:"60~69세",min:60,max:69},{id:"70+",label:"70세 이상",min:70,max:200}];
+const DISEASES=["고혈압","이상지질혈증","당뇨병","아토피피부염","건선","기타"];
+// 행정표준코드 시·도 (부산·경남 우선 정렬)
+const SIDO=[
+  {c:"26",n:"부산광역시",s:"부산",g:"동남권"},{c:"48",n:"경상남도",s:"경남",g:"동남권"},
+  {c:"31",n:"울산광역시",s:"울산",g:"동남권"},{c:"11",n:"서울특별시",s:"서울",g:"수도권"},
+  {c:"27",n:"대구광역시",s:"대구",g:"대경권"},{c:"28",n:"인천광역시",s:"인천",g:"수도권"},
+  {c:"29",n:"광주광역시",s:"광주",g:"호남권"},{c:"30",n:"대전광역시",s:"대전",g:"충청권"},
+  {c:"36",n:"세종특별자치시",s:"세종",g:"충청권"},{c:"41",n:"경기도",s:"경기",g:"수도권"},
+  {c:"51",n:"강원특별자치도",s:"강원",g:"강원권"},{c:"43",n:"충청북도",s:"충북",g:"충청권"},
+  {c:"44",n:"충청남도",s:"충남",g:"충청권"},{c:"52",n:"전북특별자치도",s:"전북",g:"호남권"},
+  {c:"46",n:"전라남도",s:"전남",g:"호남권"},{c:"47",n:"경상북도",s:"경북",g:"대경권"},
+  {c:"50",n:"제주특별자치도",s:"제주",g:"제주권"}];
+const SIDO_BY=Object.fromEntries(SIDO.map(x=>[x.c,x]));
+
+/* 고정 파라미터 (가상 시나리오 값) */
+const PARAMS={
+  "고혈압":{rr:.45,pass:.65},"이상지질혈증":{rr:.45,pass:.65},"당뇨병":{rr:.40,pass:.55},
+  "아토피피부염":{rr:.50,pass:.60},"건선":{rr:.45,pass:.55},"기타":{rr:.35,pass:.50},
+  "건강인":{rr:.50,pass:.70}};
+const POOL_MONTHS=3;      // 현재 매칭 풀 소진(연락·스크리닝 완료) 기간
+const INFLOW=0.15;        // 월 신규 가입 유입률 (현재 매칭 풀 대비)
+const MAX_MONTHS=24;
+
+/* 가상 실시기관 */
+const INST=[
+  {n:"부산 A대학교병원 임상시험센터",c:"26",d:["고혈압","당뇨병","이상지질혈증","건선","건강인"]},
+  {n:"부산 B대학교병원",c:"26",d:["아토피피부염","건선","당뇨병","기타"]},
+  {n:"부산 C종합병원",c:"26",d:["고혈압","이상지질혈증","기타"]},
+  {n:"경남 D대학교병원 (진주)",c:"48",d:["고혈압","당뇨병","이상지질혈증","기타"]},
+  {n:"경남 E대학교병원 (양산)",c:"48",d:["아토피피부염","건선","고혈압","건강인"]},
+  {n:"경남 F종합병원 (창원)",c:"48",d:["고혈압","당뇨병","이상지질혈증"]},
+  {n:"울산 G대학교병원",c:"31",d:["당뇨병","이상지질혈증","기타"]},
+  {n:"대구 H대학교병원",c:"27",d:["건선","아토피피부염","고혈압","기타"]},
+  {n:"서울 I대학교병원",c:"11",d:["고혈압","이상지질혈증","당뇨병","아토피피부염","건선","기타","건강인"]},
+  {n:"경기 J대학교병원",c:"41",d:["고혈압","당뇨병","아토피피부염","기타"]}];
+
+/* ---------- 검증용 가상 데이터셋 (시드 고정, n=300) ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=rng(20261022);
+function pick(w){let s=0;for(const k in w)s+=w[k];let x=R()*s;for(const k in w){x-=w[k];if(x<=0)return k}return Object.keys(w).pop()}
+const AGEW_P={"19-29":4,"30-39":8,"40-49":17,"50-59":29,"60-69":28,"70+":14};
+const AGEW_H={"19-29":36,"30-39":30,"40-49":18,"50-59":10,"60-69":5,"70+":1};
+const AGEW_ATO={"19-29":40,"30-39":30,"40-49":16,"50-59":9,"60-69":4,"70+":1};
+const SIDOW={"26":44,"48":22,"31":8,"27":4,"47":3,"11":5,"41":5,"28":1.5,"29":1,"30":1,"36":.5,"51":1,"43":1,"44":1,"52":1,"46":1,"50":1};
+const DISW={"고혈압":30,"이상지질혈증":22,"당뇨병":20,"아토피피부염":11,"건선":8,"기타":9};
+const ETC=["만성콩팥병","골관절염","천식","통풍"];
+const DATA=[];
+for(let i=1;i<=300;i++){
+  const status=R()<.74?"환자":"건강인";
+  const disease=status==="환자"?pick(DISW):null;
+  const bandId=pick(disease==="아토피피부염"?AGEW_ATO:status==="환자"?AGEW_P:AGEW_H);
+  const b=AGE_BANDS.find(x=>x.id===bandId);
+  const hi=b.id==="70+"?84:b.max;
+  const sexBias=disease==="고혈압"?.56:disease==="아토피피부염"?.47:.5;
+  DATA.push({
+    subject_id:"VS-"+String(i).padStart(4,"0"),
+    age:b.min+Math.floor(R()*(hi-b.min+1)),
+    sex:R()<sexBias?"M":"F",
+    sido_code:pick(SIDOW),
+    health_status:status,
+    disease_category:disease,
+    disease_detail:disease==="기타"?ETC[Math.floor(R()*ETC.length)]:null,
+    consent_matching:true});
+}
+
+/* ---------- 상태 ---------- */
+const DEFAULT={age:"50-59",sex:"M",status:"환자",disease:"고혈압",etc:"",regions:["26","48","31"],target:3};
+let state=JSON.parse(JSON.stringify(DEFAULT));
+let role="sponsor", mask=false, logs=[], last=null;
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+try{const saved=JSON.parse(store.get("starc.logs")||"[]");if(Array.isArray(saved))logs=saved.slice(-200)}catch(e){}
+
+/* ---------- 매칭 로직 (하드필터) ---------- */
+function match(c){
+  const band=AGE_BANDS.find(b=>b.id===c.age);
+  const regs=new Set(c.regions);
+  const etc=c.etc.trim();
+  return DATA.filter(r=>{
+    if(r.age<band.min||r.age>band.max)return false;
+    if(r.sex!==c.sex)return false;
+    if(!regs.has(r.sido_code))return false;
+    if(r.health_status!==c.status)return false;
+    if(c.status==="환자"){
+      if(r.disease_category!==c.disease)return false;
+      if(c.disease==="기타"&&etc&&!(r.disease_detail||"").includes(etc))return false;
+    }
+    return true;
+  });
+}
+function predict(c){
+  const rows=match(c);
+  const N=rows.length;
+  const key=c.status==="건강인"?"건강인":c.disease;
+  const p=PARAMS[key];
+  const E=N*p.rr*p.pass;
+  let months=null, reach="none";
+  if(E>0){
+    if(E>=c.target){months=POOL_MONTHS*c.target/E;reach="pool"}
+    else{const perMonth=E*INFLOW;months=POOL_MONTHS+(c.target-E)/perMonth;reach=months>MAX_MONTHS?"over":"inflow"}
+  }
+  // 지역 분포
+  const byRegion={};rows.forEach(r=>byRegion[r.sido_code]=(byRegion[r.sido_code]||0)+1);
+  // 기관 점수
+  const insts=INST.filter(it=>it.d.includes(key)).map(it=>{
+    const home=SIDO_BY[it.c];
+    const inSido=rows.filter(r=>r.sido_code===it.c).length;
+    const rate=N?inSido/N:0;
+    const acc=N?rows.reduce((s,r)=>s+(r.sido_code===it.c?1:SIDO_BY[r.sido_code].g===home.g?.6:.2),0)/N:0;
+    return {...it,rate,acc,inSido,score:.6*rate+.4*acc};
+  }).sort((a,b)=>b.score-a.score||b.inSido-a.inSido).slice(0,5);
+  return {c:JSON.parse(JSON.stringify(c)),N,key,p,E,months,reach,byRegion,insts,at:new Date()};
+}
+
+/* ---------- 유틸 ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const pct=x=>Math.round(x*100)+"%";
+const f1=x=>(Math.round(x*10)/10).toFixed(1);
+function ts(d){const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`}
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2200)}
+function condText(c){
+  const parts=[AGE_BANDS.find(b=>b.id===c.age).label,c.sex==="M"?"남성":"여성",c.status];
+  if(c.status==="환자")parts.push(c.disease==="기타"?("기타"+(c.etc.trim()?`(${c.etc.trim()})`:"")):c.disease);
+  const rg=c.regions.length===17?"전국":c.regions.map(x=>SIDO_BY[x].s).join("·");
+  parts.push(rg,`목표 ${c.target}명`);return parts;
+}
+function addLog(action,detail){
+  logs.push({t:ts(new Date()),role:role==="admin"?"관리자":"의뢰자",action,detail});
+  logs=logs.slice(-200);store.set("starc.logs",JSON.stringify(logs));
+  if(role==="admin")renderAdmin();
+}
+
+/* ---------- 입력 화면 ---------- */
+function buildForm(){
+  $("age").innerHTML=AGE_BANDS.map(b=>`<option value="${b.id}">${b.label}</option>`).join("");
+  $("disease").innerHTML=DISEASES.map(d=>`<option value="${d}">${d==="기타"?"기타(직접입력)":d}</option>`).join("");
+  $("regions").innerHTML=SIDO.map((s,i)=>`<label class="chip${i<2?" pri":""}"><input type="checkbox" id="rg-${s.c}" value="${s.c}">${s.s}<span class="code">${s.c}</span></label>`).join("");
+}
+function writeForm(){
+  $("age").value=state.age;
+  $(state.sex==="M"?"sex-m":"sex-f").checked=true;
+  $(state.status==="환자"?"st-p":"st-h").checked=true;
+  $("disease").value=state.disease;$("diseaseEtc").value=state.etc;
+  SIDO.forEach(s=>$("rg-"+s.c).checked=state.regions.includes(s.c));
+  $("target").value=state.target;
+  syncForm();
+}
+function readForm(){
+  state.age=$("age").value;
+  state.sex=document.querySelector('input[name="sex"]:checked').value;
+  state.status=document.querySelector('input[name="status"]:checked').value;
+  state.disease=$("disease").value;state.etc=$("diseaseEtc").value;
+  state.regions=SIDO.map(s=>s.c).filter(c=>$("rg-"+c).checked);
+  const t=$("target").value.trim();state.target=/^\d+$/.test(t)?parseInt(t,10):NaN;
+}
+function syncForm(){
+  const healthy=state.status==="건강인";
+  $("disease").disabled=healthy;$("diseaseEtc").hidden=healthy||state.disease!=="기타";
+  $("healthyNote").hidden=!healthy;
+  $("diseaseWhy").textContent=healthy?"건강인을 선택하면 질환 조건은 적용하지 않습니다.":"사업계획서 3-1 목표 시장의 1차 타깃 만성 질환군 (부산·경남 실시기관이 반복 수행하는 3상·4상 대상 질환)";
+  const okR=state.regions.length>0, okT=Number.isInteger(state.target)&&state.target>=1;
+  $("rgErr").hidden=okR;$("tgErr").hidden=okT;$("target").setAttribute("aria-invalid",okT?"false":"true");
+  // 미리보기
+  if(okR){
+    const N=match(state).length;
+    $("pvN").textContent=N+"명";$("pvOf").textContent=`가상 데이터셋 ${DATA.length}건 중`;
+  }else{$("pvN").textContent="–";$("pvOf").textContent="지역을 선택하세요";}
+  const parts=condText({...state,target:okT?state.target:"?"});
+  const labels=state.status==="환자"?["연령","성별","구분","질환","지역","목표"]:["연령","성별","구분","지역","목표"];
+  $("pvKv").innerHTML=parts.map((p,i)=>`<dt>${labels[i]}</dt><dd>${esc(p.replace(/^목표 /,""))}</dd>`).join("");
+  return okR&&okT;
+}
+
+/* ---------- 결과 화면 ---------- */
+function renderReport(){
+  if(!last)return;
+  const {c,N,key,p,E,months,reach,byRegion,insts,at}=last;
+  $("condChips").innerHTML=condText(c).map(x=>`<span>${esc(x)}</span>`).join("");
+  $("stamp").textContent="생성 "+ts(at)+" · 가상 데이터셋 n="+DATA.length;
+  const ach=Math.min(1,E/c.target);
+  let durV,durS,durPill;
+  if(reach==="none"){durV="—";durS="매칭 대상자가 없어 계산할 수 없습니다";durPill='<span class="pill bad">산출 불가</span>'}
+  else if(reach==="pool"){durV=months<1?`${Math.max(1,Math.round(months*4.3))}<small>주</small>`:`${f1(months)}<small>개월</small>`;durS="현재 매칭 풀만으로 목표 달성";durPill='<span class="pill ok">현 풀로 달성</span>'}
+  else if(reach==="inflow"){durV=`${f1(months)}<small>개월</small>`;durS=`현재 풀 ${POOL_MONTHS}개월 + 신규 유입분 모집`;durPill='<span class="pill warn">신규 유입 필요</span>'}
+  else{durV=`${MAX_MONTHS}+<small>개월</small>`;durS="신규 유입을 반영해도 24개월 안에 달성하기 어렵습니다";durPill='<span class="pill bad">달성 곤란</span>'}
+  $("kpis").innerHTML=`
+    <div class="kpi"><span class="l">매칭 대상자 수</span><span class="v">${N}<small>명</small></span><span class="s">하드필터 1차 매칭</span></div>
+    <div class="kpi"><span class="l">예상 등록 인원</span><span class="v">${f1(E)}<small>명</small></span><span class="s">반응률·통과율 적용</span></div>
+    <div class="kpi"><span class="l">예상 소요기간</span><span class="v">${durV}</span>${durPill}<span class="s">${durS}</span></div>
+    <div class="kpi"><span class="l">현재 풀 기준 목표 달성률</span><span class="v">${pct(ach)}</span><span class="s">목표 ${c.target}명 대비</span></div>`;
+  $("formula").innerHTML=`
+    <span class="t"><b>${N}</b><i>매칭 대상자 수</i></span><span class="op">×</span>
+    <span class="t"><b>${pct(p.rr)}</b><i>예상 반응률</i></span><span class="op">×</span>
+    <span class="t"><b>${pct(p.pass)}</b><i>예상 스크리닝 통과율</i></span><span class="op">=</span>
+    <span class="t"><b>${f1(E)}</b><i>예상 등록 인원</i></span>
+    <span class="src">파라미터 기준: <b>${esc(key)}</b> · 가상 시나리오 고정값 (문헌값 확정 전). 소요기간은 현재 풀을 ${POOL_MONTHS}개월에 걸쳐 소진하고, 이후 매월 현재 풀의 ${pct(INFLOW)}만큼 신규 매칭자가 유입된다고 가정합니다.</span>`;
+  let ban="";
+  if(c.status==="건강인")ban+='<div class="banner warn">건강인 대상 시험은 사업계획서상 비고객 영역입니다. 아래 결과는 참고용입니다.</div>';
+  if(N>0&&N<10)ban+='<div class="banner warn">매칭 대상자가 10명 미만입니다. 검증용 데이터셋 규모(300건)가 작아 수치 변동이 큽니다. 지역이나 연령 조건을 넓혀 비교해 보세요.</div>';
+  if(N===0)ban+='<div class="banner bad">조건에 맞는 대상자가 없습니다. 지역을 추가하거나 연령 구간을 바꿔 보세요.</div>';
+  $("banners").innerHTML=ban;
+  // 지역 분포
+  const entries=Object.entries(byRegion).sort((a,b)=>b[1]-a[1]);
+  const max=entries.length?entries[0][1]:1;
+  $("bars").innerHTML=entries.length?entries.map(([code,n])=>{
+    const hide=mask&&n<5;
+    return `<div class="barrow"><span>${SIDO_BY[code].s}</span><span class="track"><span class="fill" style="width:${hide?0:(n/max*100)}%"></span></span><span class="n">${hide?"&lt;5":n+"명"}</span></div>`}).join("")
+    +(c.regions.length>entries.length?`<div class="fine">선택했지만 매칭 대상자가 없는 지역: ${c.regions.filter(x=>!byRegion[x]).map(x=>SIDO_BY[x].s).join(", ")}</div>`:"")
+    :'<div class="empty">표시할 분포가 없습니다.</div>';
+  // 기관
+  $("inst").innerHTML=insts.length&&N?`<thead><tr><th>#</th><th>기관 (가상)</th><th>소재</th><th class="r">매칭률</th><th class="r">접근성</th><th class="r">점수</th></tr></thead><tbody>${
+    insts.map((it,i)=>`<tr><td class="rank">${i+1}</td><td>${esc(it.n)}</td><td>${SIDO_BY[it.c].s}</td>
+      <td class="r num"><span class="meter"><i style="width:${it.rate*100}%"></i></span>${pct(it.rate)}</td>
+      <td class="r num">${it.acc.toFixed(2)}</td><td class="r num">${it.score.toFixed(2)}</td></tr>`).join("")}</tbody>`
+    :'<tbody><tr><td class="empty">조건에 맞는 권장 기관이 없습니다.</td></tr></tbody>';
+}
+
+/* ---------- 관리 화면 ---------- */
+function renderAdmin(){
+  const locked=role!=="admin";
+  $("adminLocked").hidden=!locked;$("adminBody").hidden=locked;
+  if(locked)return;
+  const rows=logs.slice().reverse().slice(0,40);
+  $("log").innerHTML=`<thead><tr><th>시각</th><th>권한</th><th>동작</th><th>내용</th></tr></thead><tbody>${
+    rows.length?rows.map(l=>`<tr><td class="num">${esc(l.t)}</td><td>${esc(l.role)}</td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join(""):'<tr><td colspan="4" class="empty">아직 기록이 없습니다.</td></tr>'}</tbody>`;
+  $("params").innerHTML=`<thead><tr><th>구분</th><th class="r">예상 반응률</th><th class="r">스크리닝 통과율</th><th class="r">곱</th></tr></thead><tbody>${
+    Object.entries(PARAMS).map(([k,v])=>`<tr><td>${k}</td><td class="r num">${pct(v.rr)}</td><td class="r num">${pct(v.pass)}</td><td class="r num">${(v.rr*v.pass).toFixed(3)}</td></tr>`).join("")}</tbody>`;
+  $("paramsFoot").textContent=`소요기간 가정: 현재 풀 소진 ${POOL_MONTHS}개월, 월 신규 유입률 ${pct(INFLOW)}, 표시 상한 ${MAX_MONTHS}개월.`;
+  const pat=DATA.filter(r=>r.health_status==="환자").length;
+  const bs=DATA.filter(r=>r.sido_code==="26").length, gn=DATA.filter(r=>r.sido_code==="48").length;
+  $("dsSub").textContent=`총 ${DATA.length}건 · 환자 ${pat}건 / 건강인 ${DATA.length-pat}건 · 부산 ${bs}건, 경남 ${gn}건 · 시드 20261022로 매번 같은 데이터가 생성됩니다. 원본 행은 콘솔 어디에도 노출하지 않습니다.`;
+  const schema=[
+    ["subject_id","문자","가명 식별자 (VS-0001 형식)","—"],
+    ["age","정수","만 나이 → 10세 구간으로 비교","● 연령"],
+    ["sex","코드","M / F","● 성별"],
+    ["sido_code","코드","행정표준코드 시·도 2자리","● 거주지역"],
+    ["health_status","코드","건강인 / 환자","● 건강상태"],
+    ["disease_category","코드","6개 카테고리, 건강인은 null","● 질환카테고리"],
+    ["disease_detail","문자","기타 카테고리의 세부 질환명","기타 입력 시 보조"],
+    ["consent_matching","불리언","매칭 활용 동의 여부 (가상 데이터는 모두 true)","전처리 조건"]];
+  $("schema").innerHTML=`<thead><tr><th>필드</th><th>형식</th><th>설명</th><th>매칭 변수</th></tr></thead><tbody>${
+    schema.map(r=>`<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</tbody>`;
+}
+
+/* ---------- 탭·이벤트 ---------- */
+const TABS={input:["t-input","p-input"],report:["t-report","p-report"],admin:["t-admin","p-admin"]};
+function show(name){
+  for(const k in TABS){const on=k===name;$(TABS[k][0]).setAttribute("aria-selected",on);$(TABS[k][1]).hidden=!on}
+  if(name==="admin")renderAdmin();
+}
+$("t-input").onclick=()=>show("input");
+$("t-report").onclick=()=>{if(last)show("report");else toast("먼저 조건을 입력하고 리포트를 생성하세요")};
+$("t-admin").onclick=()=>show("admin");
+$("back").onclick=()=>show("input");
+
+function run(goto){
+  readForm();
+  if(!syncForm()){toast("입력값을 확인하세요");return false}
+  last=predict(state);renderReport();
+  addLog("예측 조회",`${condText(state).join(" / ")} → 매칭 ${last.N}명, 예상 등록 ${f1(last.E)}명`);
+  if(goto)show("report");return true;
+}
+$("form").addEventListener("submit",e=>{e.preventDefault();run(true)});
+$("form").addEventListener("input",()=>{readForm();syncForm()});
+$("form").addEventListener("change",()=>{readForm();syncForm()});
+const setRegions=list=>{SIDO.forEach(s=>$("rg-"+s.c).checked=list.includes(s.c));readForm();syncForm()};
+$("rgPrimary").onclick=()=>setRegions(["26","48"]);
+$("rgSouth").onclick=()=>setRegions(["26","31","48"]);
+$("rgAll").onclick=()=>setRegions(SIDO.map(s=>s.c));
+$("rgNone").onclick=()=>setRegions([]);
+$("reset").onclick=()=>{state=JSON.parse(JSON.stringify(DEFAULT));writeForm();toast("예시 조건으로 되돌렸습니다")};
+$("role").addEventListener("change",e=>{
+  role=e.target.value;
+  addLog("권한 전환",role==="admin"?"신트리아 관리자로 전환":"의뢰자로 전환");
+  if(!$("p-admin").hidden)renderAdmin();
+});
+$("mask").addEventListener("change",e=>{mask=e.target.checked;addLog("설정 변경",`소규모 셀 마스킹 ${mask?"켬":"끔"}`);renderReport()});
+
+/* ---------- 시작: 예시 조건으로 리포트까지 채워 둠 ---------- */
+buildForm();writeForm();
+last=predict(state);renderReport();
+renderAdmin();
+})();
+</script>
+
+</body></html>
