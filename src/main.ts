@@ -37,7 +37,7 @@ function scalar(sql: string): number { return db.exec(sql)[0].values[0][0] as nu
 function condText(c: Omit<Condition, 'target'> & { target: number | string }): string[] {
   const parts = [AGE_BANDS.find((b) => b.id === c.age)!.label, c.sex === 'M' ? '남성' : '여성', c.status]
   if (c.status === '환자') parts.push(c.disease === '기타' ? ('기타' + (c.etc.trim() ? `(${c.etc.trim()})` : '')) : c.disease)
-  const rg = c.regions.length === 17 ? '전국' : c.regions.map((x) => SIDO_BY[x].s).join('·')
+  const rg = c.regions.length === 17 ? '전국' : c.regions.map((x) => SIDO_BY[x].s).join(', ')
   parts.push(rg, `목표 ${c.target}명`); return parts
 }
 // 로그에는 조건과 집계값만 남긴다 (subject_id 없음)
@@ -74,7 +74,7 @@ function syncForm(): boolean {
   const healthy = state.status === '건강인'
   $<HTMLSelectElement>('disease').disabled = healthy; $('diseaseEtc').hidden = healthy || state.disease !== '기타'
   $('healthyNote').hidden = !healthy
-  $('diseaseWhy').textContent = healthy ? '건강인은 질환 조건을 보지 않습니다.' : "부산·경남 실시기관에서 3상·4상 시험이 자주 진행되는 만성 질환 6종입니다. 목록에 없으면 '기타'를 고르고 질환명을 입력하세요."
+  $('diseaseWhy').textContent = healthy ? '건강인은 질환 조건을 보지 않습니다.' : "부산과 경남 실시기관에서 3상, 4상 시험이 자주 진행되는 만성 질환 6종입니다. 목록에 없으면 '기타'를 고르고 질환명을 입력하세요."
   const okR = state.regions.length > 0, okT = Number.isInteger(state.target) && state.target >= 1
   $('rgErr').hidden = okR; $('tgErr').hidden = okT; $('target').setAttribute('aria-invalid', okT ? 'false' : 'true')
   // 미리보기
@@ -93,7 +93,7 @@ function renderReport(): void {
   if (!last) return
   const { c, N, key, p, E, months, reach, byRegion, insts, at } = last
   $('condChips').innerHTML = condText(c).map((x) => `<span>${esc(x)}</span>`).join('')
-  $('stamp').textContent = '생성 ' + ts(at) + ' · 가상 데이터셋 n=' + total
+  $('stamp').textContent = '생성 ' + ts(at) + ', 가상 데이터 ' + total + '명 기준'
   const ach = Math.min(1, E / c.target)
   let durV: string, durS: string, durPill: string
   if (reach === 'none') { durV = '—'; durS = '매칭 대상자가 없어 계산할 수 없습니다'; durPill = '<span class="pill bad">산출 불가</span>' }
@@ -102,7 +102,7 @@ function renderReport(): void {
   else { durV = `${MAX_MONTHS}+<small>개월</small>`; durS = `신규 유입을 반영해도 ${MAX_MONTHS}개월 안에 달성하기 어렵습니다`; durPill = '<span class="pill bad">달성 곤란</span>' }
   $('kpis').innerHTML = `
     <div class="kpi"><span class="l">매칭 대상자 수</span><span class="v">${N}<small>명</small></span><span class="s">하드필터 1차 매칭</span></div>
-    <div class="kpi"><span class="l">예상 등록 인원</span><span class="v">${f1(E)}<small>명</small></span><span class="s">반응률·통과율 적용</span></div>
+    <div class="kpi"><span class="l">예상 등록 인원</span><span class="v">${f1(E)}<small>명</small></span><span class="s">반응률과 통과율 적용</span></div>
     <div class="kpi"><span class="l">예상 소요기간</span><span class="v">${durV}</span>${durPill}<span class="s">${durS}</span></div>
     <div class="kpi"><span class="l">현재 풀 기준 목표 달성률</span><span class="v">${pct(ach)}</span><span class="s">목표 ${c.target}명 대비</span></div>`
   $('formula').innerHTML = `
@@ -110,7 +110,7 @@ function renderReport(): void {
     <span class="t"><b>${pct(p.rr)}</b><i>예상 반응률</i></span><span class="op">×</span>
     <span class="t"><b>${pct(p.pass)}</b><i>예상 스크리닝 통과율</i></span><span class="op">=</span>
     <span class="t"><b>${f1(E)}</b><i>예상 등록 인원</i></span>
-    <span class="src">반응률·통과율은 <b>${esc(key)}</b> 기준 가상 값입니다(확정 전). 소요기간은 현재 대상자를 ${POOL_MONTHS}개월 안에 모두 접촉하고, 그 뒤 매월 현재 인원의 ${pct(INFLOW)}가 새로 들어온다고 가정해 계산합니다.</span>`
+    <span class="src">반응률과 통과율은 <b>${esc(key)}</b> 기준 가상 값입니다(확정 전). 소요기간은 현재 대상자를 ${POOL_MONTHS}개월 안에 모두 접촉하고, 그 뒤 매월 현재 인원의 ${pct(INFLOW)}가 새로 들어온다고 가정해 계산합니다.</span>`
   let ban = ''
   if (c.status === '건강인') ban += '<div class="banner warn">건강인 대상 시험은 주요 서비스 범위 밖입니다. 결과는 참고용입니다.</div>'
   if (N > 0 && N < 10) ban += `<div class="banner warn">매칭 대상자가 10명 미만입니다. 가상 데이터가 ${total}명뿐이라 숫자 변동이 큽니다. 지역이나 연령을 넓혀 비교해 보세요.</div>`
@@ -148,12 +148,12 @@ function renderAdmin(): void {
   $('paramsFoot').textContent = `소요기간 가정: 현재 풀 소진 ${POOL_MONTHS}개월, 월 신규 유입률 ${pct(INFLOW)}, 표시 상한 ${MAX_MONTHS}개월.`
   const pat = scalar("SELECT COUNT(*) FROM subjects WHERE health_status = '환자'")
   const bs = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '26'"), gn = scalar("SELECT COUNT(*) FROM subjects WHERE sido_code = '48'")
-  $('dsSub').textContent = `총 ${total}명 · 환자 ${pat} / 건강인 ${total - pat} · 부산 ${bs}, 경남 ${gn} · 시드 20261022로 생성한 고정 데이터입니다. 개별 행은 화면에 표시하지 않습니다.`
+  $('dsSub').textContent = `총 ${total}명 (환자 ${pat}, 건강인 ${total - pat}), 부산 ${bs}명, 경남 ${gn}명. 시드 20261022로 생성한 고정 데이터이며 개별 행은 화면에 표시하지 않습니다.`
   const schema = [
     ['subject_id', '문자', '가명 식별자 (VS-0001 형식)', '—'],
     ['age', '정수', '만 나이 → 10세 구간으로 비교', '● 연령'],
     ['sex', '코드', 'M / F', '● 성별'],
-    ['sido_code', '코드', '행정표준코드 시·도 2자리', '● 거주지역'],
+    ['sido_code', '코드', '행정표준코드 시도 2자리', '● 거주지역'],
     ['health_status', '코드', '건강인 / 환자', '● 건강상태'],
     ['disease_category', '코드', '6개 카테고리, 건강인은 null', '● 질환카테고리'],
     ['disease_detail', '문자', '기타 카테고리의 세부 질환명', '기타 입력 시 보조'],

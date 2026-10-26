@@ -9,8 +9,8 @@
     <p id="srcNote" style="margin:16px;padding:12px;border:2px solid #e53935;font:15px sans-serif">이 파일은 개발용 원본이라 화면이 동작하지 않습니다. <b>npm run build</b> 후 <b>dist/index.html</b>을 여세요.</p>
 <header class="top">
   <div class="wrap">
-    <div class="brand"><b>STAR-C</b><span>의뢰자용 모집 가능성 예측·매칭 콘솔</span></div>
-    <span class="tag" title="실 대상자 DB와 연동되지 않습니다">파일럿 · 검증용 가상 데이터셋 · 실 DB 미연동</span>
+    <div class="brand"><b>STAR-C</b><span>의뢰자용 모집 가능성 예측 콘솔</span></div>
+    <span class="tag" title="실 대상자 DB와 연동되지 않습니다">파일럿 버전: 검증용 가상 데이터로 동작, 실제 DB 미연동</span>
     <div class="role">
       <label for="role">접속 권한</label>
       <select id="role">
@@ -25,7 +25,7 @@
   <nav class="tabs" role="tablist" aria-label="화면">
     <button class="tab" role="tab" id="t-input" aria-selected="true" aria-controls="p-input"><span class="k">1</span>조건 입력</button>
     <button class="tab" role="tab" id="t-report" aria-selected="false" aria-controls="p-report"><span class="k">2</span>예측 리포트</button>
-    <button class="tab" role="tab" id="t-admin" aria-selected="false" aria-controls="p-admin"><span class="k">관리</span>권한·로그·데이터 구조</button>
+    <button class="tab" role="tab" id="t-admin" aria-selected="false" aria-controls="p-admin"><span class="k">관리</span>권한, 로그, 데이터 구조</button>
   </nav>
 
   <!-- ① 입력 화면 -->
@@ -55,7 +55,7 @@
               <label><input type="radio" name="status" id="st-h" value="건강인"><span>건강인</span></label>
               <label><input type="radio" name="status" id="st-p" value="환자" checked><span>환자</span></label>
             </div>
-            <div class="note" id="healthyNote" hidden>건강인 대상 시험(1상·생동성)은 주요 서비스 범위가 아닙니다. 결과는 참고용입니다.</div>
+            <div class="note" id="healthyNote" hidden>건강인 대상 시험(1상, 생동성)은 주요 서비스 범위가 아닙니다. 결과는 참고용입니다.</div>
           </div>
         </div>
         <div class="field">
@@ -71,13 +71,13 @@
           <div class="ctrl">
             <div class="regions" id="regions"></div>
             <div class="regions-tools">
-              <button type="button" class="linkbtn" id="rgPrimary">부산·경남만</button>
-              <button type="button" class="linkbtn" id="rgSouth">동남권(부산·울산·경남)</button>
+              <button type="button" class="linkbtn" id="rgPrimary">부산, 경남만</button>
+              <button type="button" class="linkbtn" id="rgSouth">동남권 (부산, 울산, 경남)</button>
               <button type="button" class="linkbtn" id="rgAll">전국</button>
               <button type="button" class="linkbtn" id="rgNone">선택 해제</button>
             </div>
             <div class="err" id="rgErr" hidden>목표 지역을 하나 이상 선택하세요.</div>
-            <div class="tip" id="tip-region" hidden>전국 17개 시·도(행정표준코드 기준)이며 여러 곳을 고를 수 있습니다. 주요 대상 지역인 부산·경남을 맨 앞에 두었습니다.</div>
+            <div class="tip" id="tip-region" hidden>전국 17개 시도(행정표준코드 기준)이며 여러 곳을 고를 수 있습니다. 주요 대상 지역인 부산과 경남을 맨 앞에 두었습니다.</div>
           </div>
         </div>
         <div class="field">
@@ -96,7 +96,7 @@
       <aside class="side">
         <div class="sheet">
           <div class="eyebrow">매칭 대상자 미리보기<button type="button" class="info" aria-controls="tip-rule" aria-expanded="false" title="매칭 규칙">!</button></div>
-          <div class="tip" id="tip-rule" hidden>연령·성별·지역·질환·건강상태 다섯 조건이 <b>모두 맞는</b> 대상자만 셉니다. 가중치나 유사도는 쓰지 않습니다. 건강인은 질환 조건을 보지 않습니다.</div>
+          <div class="tip" id="tip-rule" hidden>연령, 성별, 지역, 질환, 건강상태 다섯 조건이 <b>모두 맞는</b> 대상자만 셉니다. 가중치나 유사도는 쓰지 않습니다. 건강인은 질환 조건을 보지 않습니다.</div>
           <div class="preview"><span class="big" id="pvN">–</span><span class="why" id="pvOf"></span></div>
           <dl class="kv" id="pvKv"></dl>
         </div>
@@ -119,13 +119,13 @@
     <div class="two">
       <div class="card">
         <h3>지역별 분포</h3>
-        <div class="sub">매칭 대상자의 거주 시·도 기준</div>
+        <div class="sub">매칭 대상자가 사는 시도 기준</div>
         <div class="bars" id="bars"></div>
       </div>
       <div class="card">
         <h3>권장 실시기관<button type="button" class="info" aria-controls="tip-inst" aria-expanded="false" title="점수 계산 방법">!</button></h3>
         <div class="sub">매칭률 60% + 접근성 40% 점수 상위 5곳 (기관명은 가상)</div>
-        <div class="tip" id="tip-inst" hidden>매칭률은 기관이 있는 시·도에 사는 매칭 대상자의 비율입니다. 접근성은 대상자별 거리 점수의 평균입니다(같은 시·도 1.0, 같은 권역 0.6, 그 외 0.2). 해당 질환 시험을 하지 않는 기관은 뺍니다.</div>
+        <div class="tip" id="tip-inst" hidden>매칭률은 기관이 있는 시도에 사는 매칭 대상자의 비율입니다. 접근성은 대상자별 거리 점수의 평균입니다(같은 시도 1.0, 같은 권역 0.6, 그 외 0.2). 해당 질환 시험을 하지 않는 기관은 뺍니다.</div>
         <div class="tbl"><table id="inst"></table></div>
       </div>
     </div>
@@ -136,7 +136,7 @@
 
   <!-- 관리 화면 -->
   <section class="panel" id="p-admin" role="tabpanel" aria-labelledby="t-admin" hidden>
-    <div id="adminLocked" class="sheet lock" hidden>관리자 권한에서만 열립니다. 의뢰자는 매칭·예측 결과만 볼 수 있습니다.</div>
+    <div id="adminLocked" class="sheet lock" hidden>관리자 권한에서만 열립니다. 의뢰자는 매칭과 예측 결과만 볼 수 있습니다.</div>
     <div id="adminBody" class="admin-grid">
       <div class="card wide">
         <h3>사용 이력 로그</h3>
@@ -146,7 +146,7 @@
       </div>
       <div class="card">
         <h3>고정 파라미터</h3>
-        <div class="sub">질환별 반응률·스크리닝 통과율입니다. 지금은 가상 값이며 확정 후 교체합니다.</div>
+        <div class="sub">질환별 반응률과 스크리닝 통과율입니다. 지금은 가상 값이며 확정 후 교체합니다.</div>
         <div class="tbl"><table id="params"></table></div>
         <div class="fine" id="paramsFoot"></div>
         <label class="toggle"><input type="checkbox" id="mask"> 지역별 분포에서 5명 미만은 숫자를 가림 (실데이터 연동 시 권장)</label>
@@ -155,13 +155,13 @@
         <h3>데이터 분리 구조</h3>
         <div class="sub">의뢰자 콘솔은 집계 결과만 받습니다. 실데이터 연동 시에도 대상자용 서비스 DB와 분리합니다.</div>
         <div class="flow">
-          <div class="box"><b>대상자용 서비스 DB</b>원본 개인정보 · 동의 이력</div>
+          <div class="box"><b>대상자용 서비스 DB</b>원본 개인정보, 동의 이력</div>
           <div class="arr">→</div>
           <div class="box sep"><b>매칭용 분리 DB</b>가명 ID + 매칭 변수 5종만 적재</div>
           <div class="arr">→</div>
-          <div class="box"><b>집계 API</b>인원 수 · 분포만 반환</div>
+          <div class="box"><b>집계 API</b>인원 수와 분포만 반환</div>
           <div class="arr">→</div>
-          <div class="box"><b>의뢰자 콘솔</b>결과값 조회 · 로그 기록</div>
+          <div class="box"><b>의뢰자 콘솔</b>결과 조회, 로그 기록</div>
         </div>
         <div class="fine">파일럿에서는 앞 단계 없이 매칭용 DB 자리에 가상 데이터셋을 둡니다.</div>
       </div>
