@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="360" viewBox="0 0 1000 360" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="14">
+  <rect width="1000" height="360" fill="#ffffff"/>
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#666666"/>
+    </marker>
+  </defs>
+
+  <!-- 상단 영역 라벨 -->
+  <text x="40" y="38" font-size="13" fill="#666666">신트리아 내부 (대상자 정보 보유)</text>
+  <text x="560" y="38" font-size="13" fill="#666666">의뢰자에게 공개되는 범위 (집계 결과만)</text>
+  <line x1="520" y1="22" x2="520" y2="300" stroke="#dcdddf" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- 박스 1: 대상자용 서비스 DB -->
+  <rect x="40" y="60" width="200" height="110" rx="10" fill="#f4f5f6" stroke="#dcdddf"/>
+  <text x="140" y="90" text-anchor="middle" font-weight="700" fill="#111111">대상자용 서비스 DB</text>
+  <text x="140" y="116" text-anchor="middle" fill="#666666">이름, 연락처 등 원본 정보</text>
+  <text x="140" y="136" text-anchor="middle" fill="#666666">동의 기록</text>
+  <text x="140" y="158" text-anchor="middle" font-size="12" fill="#e53935">콘솔에서 접근 불가</text>
+
+  <!-- 화살표 1 -->
+  <line x1="240" y1="115" x2="282" y2="115" stroke="#666666" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="261" y="104" text-anchor="middle" font-size="11" fill="#666666">가명화</text>
+
+  <!-- 박스 2: 매칭용 분리 DB -->
+  <rect x="284" y="60" width="200" height="110" rx="10" fill="#ffffff" stroke="#4393f0" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="384" y="90" text-anchor="middle" font-weight="700" fill="#111111">매칭용 분리 DB</text>
+  <text x="384" y="116" text-anchor="middle" fill="#666666">가명 ID + 매칭 항목 5개</text>
+  <text x="384" y="136" text-anchor="middle" fill="#666666">동의 여부</text>
+  <text x="384" y="158" text-anchor="middle" font-size="12" fill="#4393f0">subjects 테이블</text>
+
+  <!-- 화살표 2 -->
+  <line x1="484" y1="115" x2="556" y2="115" stroke="#666666" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="520" y="104" text-anchor="middle" font-size="11" fill="#666666">조건 조회</text>
+
+  <!-- 박스 3: 집계 -->
+  <rect x="558" y="60" width="200" height="110" rx="10" fill="#f4f5f6" stroke="#dcdddf"/>
+  <text x="658" y="90" text-anchor="middle" font-weight="700" fill="#111111">집계 처리</text>
+  <text x="658" y="116" text-anchor="middle" fill="#666666">조건에 맞는 인원 수</text>
+  <text x="658" y="136" text-anchor="middle" fill="#666666">시도별 분포</text>
+  <text x="658" y="158" text-anchor="middle" font-size="12" fill="#4393f0">match.sql</text>
+
+  <!-- 화살표 3 -->
+  <line x1="758" y1="115" x2="800" y2="115" stroke="#666666" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="779" y="104" text-anchor="middle" font-size="11" fill="#666666">숫자만</text>
+
+  <!-- 박스 4: 의뢰자 콘솔 -->
+  <rect x="802" y="60" width="160" height="110" rx="10" fill="#ecf5ff" stroke="#4393f0"/>
+  <text x="882" y="90" text-anchor="middle" font-weight="700" fill="#111111">의뢰자 콘솔</text>
+  <text x="882" y="116" text-anchor="middle" fill="#666666">예측 리포트 표시</text>
+  <text x="882" y="136" text-anchor="middle" fill="#666666">사용 기록 저장</text>
+  <text x="882" y="158" text-anchor="middle" font-size="12" fill="#4393f0">dist/index.html</text>
+
+  <!-- 파일럿 범위 괄호 -->
+  <path d="M284,205 L284,220 L962,220 L962,205" fill="none" stroke="#4393f0" stroke-width="1.5"/>
+  <text x="623" y="244" text-anchor="middle" font-weight="700" fill="#4393f0">파일럿 구현 범위 (HTML 파일 하나에 포함)</text>
+  <text x="623" y="266" text-anchor="middle" fill="#666666">매칭용 DB 자리에 검증용 가상 데이터 300건을 넣어 동작. 대상자용 서비스 DB와는 연결하지 않음.</text>
+
+  <!-- 하단 주석 -->
+  <text x="40" y="312" font-size="12" fill="#666666">· 원본 정보는 왼쪽 영역을 벗어나지 않음. 콘솔로 넘어가는 것은 인원 수와 분포뿐이며 대상자 목록은 전달하지 않음.</text>
+  <text x="40" y="334" font-size="12" fill="#666666">· 실제 데이터 연동 시에도 같은 구조를 유지하며, 집계 처리를 서버로 분리하면 콘솔 파일에 대상자 행이 포함되지 않음.</text>
+</svg>
