@@ -2,3 +2,4 @@
 CLAUDE.md export-ignore
 .gitattributes export-ignore
 .claude export-ignore
+docs/tools export-ignore
