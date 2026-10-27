@@ -82,6 +82,7 @@ star-c/
     main.ts                      화면
     style.css                    신트리아 홈페이지 톤
     fonts/PretendardVariable.woff2, LICENSE.txt
+    assets/syntria_logo.png      신트리아 로고 (클라이언트 제공, 332×74 PNG). 상단 STAR-C 왼쪽에 표시
   index.html                    개발용 원본 (직접 열면 동작 안 함)
   dist/index.html               납품 파일 (커밋에 포함)
   vite.config.ts, tsconfig.json, package.json
@@ -173,3 +174,5 @@ star-c/
 - 커밋 7개 사용자가 푸시(`ab0bc8c`).
 - 사용자 지시: 앞으로 모든 요청·결정을 CLAUDE.md 작업 이력에 기록. README.md(비개발자·Windows용 설치 안내) 작성.
 - 사용자 지적: CLAUDE.md가 저장소에 있어 클라이언트에게 노출될 수 있음 → `.gitattributes` export-ignore 추가, README의 CLAUDE.md 언급 삭제, 납품 방식을 운영 규칙에 명시.
+- 클라이언트 추가 요청 2건 접수: ① 로고 삽입 ② 성별에 '성별무관' 추가.
+- 로고: 클라이언트가 준 `src/assets/syntria_logo.png`를 상단 STAR-C 글자 왼쪽에 높이 26px로 배치, 사이에 세로 구분선. 빌드 시 인라인(dist +17KB).
