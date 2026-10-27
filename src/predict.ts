@@ -7,7 +7,7 @@ export type Status = '환자' | '건강인'
 
 export interface Condition {
   age: string // AGE_BANDS id
-  sex: 'M' | 'F'
+  sex: 'M' | 'F' | 'A' // A = 성별무관
   status: Status
   disease: string
   etc: string // '기타' 직접입력

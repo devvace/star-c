@@ -35,7 +35,7 @@ function toast(msg: string): void { const t = $('toast'); t.textContent = msg; t
 function scalar(sql: string): number { return db.exec(sql)[0].values[0][0] as number }
 
 function condText(c: Omit<Condition, 'target'> & { target: number | string }): string[] {
-  const parts = [AGE_BANDS.find((b) => b.id === c.age)!.label, c.sex === 'M' ? '남성' : '여성', c.status]
+  const parts = [AGE_BANDS.find((b) => b.id === c.age)!.label, c.sex === 'M' ? '남성' : c.sex === 'F' ? '여성' : '성별무관', c.status]
   if (c.status === '환자') parts.push(c.disease === '기타' ? ('기타' + (c.etc.trim() ? `(${c.etc.trim()})` : '')) : c.disease)
   const rg = c.regions.length === 17 ? '전국' : c.regions.map((x) => SIDO_BY[x].s).join(', ')
   parts.push(rg, `목표 ${c.target}명`); return parts
@@ -57,7 +57,7 @@ function buildForm(): void {
 }
 function writeForm(): void {
   $<HTMLSelectElement>('age').value = state.age
-  $<HTMLInputElement>(state.sex === 'M' ? 'sex-m' : 'sex-f').checked = true
+  $<HTMLInputElement>(state.sex === 'M' ? 'sex-m' : state.sex === 'F' ? 'sex-f' : 'sex-a').checked = true
   $<HTMLInputElement>(state.status === '환자' ? 'st-p' : 'st-h').checked = true
   $<HTMLSelectElement>('disease').value = state.disease; $<HTMLInputElement>('diseaseEtc').value = state.etc
   SIDO.forEach((s) => ($<HTMLInputElement>('rg-' + s.c).checked = state.regions.includes(s.c)))

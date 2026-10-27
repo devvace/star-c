@@ -4,7 +4,7 @@
 --
 -- 바인딩 값
 --   :age_min, :age_max   연령 구간 (예: 50, 59 / 70세 이상은 70, 200)
---   :sex                 'M' | 'F'
+--   :sex                 'M' | 'F' | 'A' (A = 성별무관, 성별 조건을 적용하지 않음)
 --   :health_status       '환자' | '건강인'
 --   :disease             질환 카테고리 6종 중 하나 (건강인이면 무시)
 --   :disease_detail      '기타' 직접입력 문자열, 없으면 '' (질환이 '기타'일 때만 사용)
@@ -13,7 +13,7 @@ SELECT sido_code, COUNT(*) AS n
 FROM subjects
 WHERE consent_matching = 1                                          -- 전처리: 매칭 활용 동의자만
   AND age BETWEEN :age_min AND :age_max                             -- ① 연령
-  AND sex = :sex                                                    -- ② 성별
+  AND (:sex = 'A' OR sex = :sex)                                    -- ② 성별 (성별무관이면 적용하지 않음)
   AND sido_code IN (SELECT value FROM json_each(:regions))          -- ③ 거주지역
   AND health_status = :health_status                                -- ④ 건강상태
   AND (                                                             -- ⑤ 질환 (건강인이면 적용하지 않음)
